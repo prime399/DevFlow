@@ -1,0 +1,10 @@
+{
+  "background_color": "#ffffff",
+  "description": "DevFlow",
+  "display": "standalone",
+  "name": "DevFlow",
+  "short_name": "DevFlow",
+  "start_url": "/index.html",
+  "theme_color": "#ffffff",
+  "scope": "/"
+}

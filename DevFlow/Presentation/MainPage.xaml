@@ -1,0 +1,77 @@
+<Page x:Class="DevFlow.Presentation.MainPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:DevFlow.Presentation"
+      xmlns:shared="using:DevFlow.Shared"
+      xmlns:uen="using:Uno.Extensions.Navigation.UI"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:um="using:Uno.Material"
+      NavigationCacheMode="Required"
+      Background="{ThemeResource BackgroundBrush}">
+
+  <Grid utu:SafeArea.Insets="VisibleBounds">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <utu:NavigationBar Content="{Binding Title}" />
+
+    <!-- Add New Item Section -->
+    <StackPanel Grid.Row="1" Padding="16" Spacing="8">
+      <TextBox Text="{Binding NewItemTitle, Mode=TwoWay}"
+               PlaceholderText="Item title"
+               x:Uid="MainPage.TextBox.NewItemTitle" />
+      <TextBox Text="{Binding NewItemDescription, Mode=TwoWay}"
+               PlaceholderText="Description (optional)"
+               x:Uid="MainPage.TextBox.NewItemDescription" />
+      <Button Content="Add Item"
+              Command="{Binding AddItem}"
+              HorizontalAlignment="Stretch"
+              Style="{StaticResource FilledButtonStyle}" />
+    </StackPanel>
+
+    <!-- Items List -->
+    <ListView Grid.Row="2"
+              x:Name="ItemsListView"
+              ItemsSource="{Binding Items}"
+              Padding="16,0">
+      <ListView.ItemTemplate>
+        <DataTemplate x:DataType="shared:DataItem">
+          <utu:Card Margin="0,4" Padding="12">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+
+              <CheckBox IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                        VerticalAlignment="Center" />
+
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0">
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource TitleMedium}" />
+                <TextBlock Text="{Binding Description}"
+                           Style="{StaticResource BodySmall}"
+                           Foreground="{ThemeResource OnSurfaceVariantBrush}" />
+                <TextBlock Style="{StaticResource LabelSmall}"
+                           Foreground="{ThemeResource OutlineBrush}">
+                  <Run Text="Created: " />
+                  <Run Text="{Binding CreatedAt}" />
+                </TextBlock>
+              </StackPanel>
+
+              <Button Grid.Column="2"
+                      VerticalAlignment="Center"
+                      Style="{StaticResource TextButtonStyle}">
+                <FontIcon Glyph="&#xE74D;" FontSize="16" />
+              </Button>
+            </Grid>
+          </utu:Card>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+  </Grid>
+</Page>
