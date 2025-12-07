@@ -1,77 +1,183 @@
 <Page x:Class="DevFlow.Presentation.MainPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:local="using:DevFlow.Presentation"
-      xmlns:shared="using:DevFlow.Shared"
-      xmlns:uen="using:Uno.Extensions.Navigation.UI"
       xmlns:utu="using:Uno.Toolkit.UI"
-      xmlns:um="using:Uno.Material"
       NavigationCacheMode="Required"
       Background="{ThemeResource BackgroundBrush}">
 
-  <Grid utu:SafeArea.Insets="VisibleBounds">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-    </Grid.RowDefinitions>
+  <Grid utu:SafeArea.Insets="VisibleBounds"
+        Background="{ThemeResource BackgroundBrush}">
+    <NavigationView PaneDisplayMode="Left"
+                    IsBackButtonVisible="Collapsed"
+                    IsPaneOpen="True"
+                    OpenPaneLength="240"
+                    CompactPaneLength="56"
+                    PaneTitle="DevFlow API Lab">
+      <NavigationView.MenuItems>
+        <NavigationViewItem Content="REST"
+                            IsSelected="True"
+                            x:Uid="MainPage.Nav.Rest">
+          <NavigationViewItem.Icon>
+            <FontIcon Glyph="&#xE7F5;" />
+          </NavigationViewItem.Icon>
+        </NavigationViewItem>
+        <NavigationViewItem Content="GraphQL"
+                            x:Uid="MainPage.Nav.GraphQL">
+          <NavigationViewItem.Icon>
+            <FontIcon Glyph="&#xF2B7;" />
+          </NavigationViewItem.Icon>
+        </NavigationViewItem>
+        <NavigationViewItem Content="Realtime"
+                            x:Uid="MainPage.Nav.Realtime">
+          <NavigationViewItem.Icon>
+            <FontIcon Glyph="&#xE95A;" />
+          </NavigationViewItem.Icon>
+        </NavigationViewItem>
+        <NavigationViewItem Content="Settings"
+                            x:Uid="MainPage.Nav.Settings">
+          <NavigationViewItem.Icon>
+            <FontIcon Glyph="&#xE713;" />
+          </NavigationViewItem.Icon>
+        </NavigationViewItem>
+      </NavigationView.MenuItems>
 
-    <utu:NavigationBar Content="{Binding Title}" />
+      <NavigationView.Content>
+        <ScrollViewer>
+          <utu:AutoLayout Orientation="Vertical"
+                          Padding="24"
+                          Spacing="16">
 
-    <!-- Add New Item Section -->
-    <StackPanel Grid.Row="1" Padding="16" Spacing="8">
-      <TextBox Text="{Binding NewItemTitle, Mode=TwoWay}"
-               PlaceholderText="Item title"
-               x:Uid="MainPage.TextBox.NewItemTitle" />
-      <TextBox Text="{Binding NewItemDescription, Mode=TwoWay}"
-               PlaceholderText="Description (optional)"
-               x:Uid="MainPage.TextBox.NewItemDescription" />
-      <Button Content="Add Item"
-              Command="{Binding AddItem}"
-              HorizontalAlignment="Stretch"
-              Style="{StaticResource FilledButtonStyle}" />
-    </StackPanel>
+            <utu:AutoLayout Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Title}"
+                         Style="{StaticResource TitleLarge}"
+                         x:Uid="MainPage.Label.Title" />
+              <utu:Chip Content="Workspace"
+                        HorizontalAlignment="Left" />
+              <ProgressRing Width="24"
+                            Height="24"
+                            IsActive="{Binding IsSending}" />
+            </utu:AutoLayout>
 
-    <!-- Items List -->
-    <ListView Grid.Row="2"
-              x:Name="ItemsListView"
-              ItemsSource="{Binding Items}"
-              Padding="16,0">
-      <ListView.ItemTemplate>
-        <DataTemplate x:DataType="shared:DataItem">
-          <utu:Card Margin="0,4" Padding="12">
-            <Grid>
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-              </Grid.ColumnDefinitions>
+            <utu:Card Padding="16">
+              <utu:AutoLayout Orientation="Vertical" Spacing="12">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                      HorizontalAlignment="Stretch">
+                  <ComboBox Grid.Column="0"
+                            ItemsSource="{Binding Methods}"
+                            SelectedItem="{Binding SelectedMethod, Mode=TwoWay}"
+                            MinWidth="120"
+                            x:Uid="MainPage.ComboBox.Method"
+                            HorizontalAlignment="Stretch" />
+                  <TextBox Grid.Column="1"
+                           Text="{Binding RequestUrl, Mode=TwoWay}"
+                           PlaceholderText="https://api.example.com/resource"
+                           x:Uid="MainPage.TextBox.Url"
+                           HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="2"
+                          Content="Send"
+                          Command="{Binding SendRequest}"
+                          Style="{StaticResource FilledButtonStyle}"
+                          x:Uid="MainPage.Button.Send"
+                          HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="3"
+                          Content="Reset"
+                          Command="{Binding ResetResponse}"
+                          Style="{StaticResource FilledTonalButtonStyle}"
+                          x:Uid="MainPage.Button.Reset"
+                          HorizontalAlignment="Stretch" />
+                </Grid>
 
-              <CheckBox IsChecked="{Binding IsCompleted, Mode=OneWay}"
-                        VerticalAlignment="Center" />
-
-              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0">
-                <TextBlock Text="{Binding Title}"
-                           Style="{StaticResource TitleMedium}" />
-                <TextBlock Text="{Binding Description}"
+                <TextBlock Text="Craft requests with method, URL, and optional query, headers, or body."
                            Style="{StaticResource BodySmall}"
                            Foreground="{ThemeResource OnSurfaceVariantBrush}" />
-                <TextBlock Style="{StaticResource LabelSmall}"
-                           Foreground="{ThemeResource OutlineBrush}">
-                  <Run Text="Created: " />
-                  <Run Text="{Binding CreatedAt}" />
-                </TextBlock>
-              </StackPanel>
+              </utu:AutoLayout>
+            </utu:Card>
 
-              <Button Grid.Column="2"
-                      VerticalAlignment="Center"
-                      Style="{StaticResource TextButtonStyle}">
-                <FontIcon Glyph="&#xE74D;" FontSize="16" />
-              </Button>
-            </Grid>
-          </utu:Card>
-        </DataTemplate>
-      </ListView.ItemTemplate>
-    </ListView>
+            <Pivot>
+              <PivotItem Header="Parameters"
+                         x:Uid="MainPage.Pivot.Parameters">
+                <utu:Card Padding="16">
+                  <utu:AutoLayout Orientation="Vertical" Spacing="8">
+                    <TextBlock Text="Enter query parameters (one per line, key=value)."
+                               Style="{StaticResource LabelLarge}" />
+                    <TextBox AcceptsReturn="True"
+                             Text="{Binding QueryParams, Mode=TwoWay}"
+                             PlaceholderText="userId=1"
+                             x:Uid="MainPage.TextBox.Query"
+                             Height="100"
+                             TextWrapping="Wrap" />
+                  </utu:AutoLayout>
+                </utu:Card>
+              </PivotItem>
+
+              <PivotItem Header="Headers"
+                         x:Uid="MainPage.Pivot.Headers">
+                <utu:Card Padding="16">
+                  <utu:AutoLayout Orientation="Vertical" Spacing="8">
+                    <TextBlock Text="Provide headers (key: value)."
+                               Style="{StaticResource LabelLarge}" />
+                    <TextBox AcceptsReturn="True"
+                             Text="{Binding HeadersText, Mode=TwoWay}"
+                             PlaceholderText="accept: application/json"
+                             x:Uid="MainPage.TextBox.Headers"
+                             Height="100"
+                             TextWrapping="Wrap" />
+                  </utu:AutoLayout>
+                </utu:Card>
+              </PivotItem>
+
+              <PivotItem Header="Body"
+                         x:Uid="MainPage.Pivot.Body">
+                <utu:Card Padding="16">
+                  <utu:AutoLayout Orientation="Vertical" Spacing="8">
+                    <TextBlock Text="JSON or raw body."
+                               Style="{StaticResource LabelLarge}" />
+                    <TextBox AcceptsReturn="True"
+                             Text="{Binding BodyText, Mode=TwoWay}"
+                             PlaceholderText="Raw body (JSON)"
+                             x:Uid="MainPage.TextBox.Body"
+                             Height="160"
+                             FontFamily="Consolas"
+                             TextWrapping="Wrap" />
+                  </utu:AutoLayout>
+                </utu:Card>
+              </PivotItem>
+            </Pivot>
+
+            <utu:AutoLayout Orientation="Vertical" Spacing="8">
+              <TextBlock Text="Response"
+                         Style="{StaticResource TitleMedium}"
+                         x:Uid="MainPage.Label.Response" />
+              <utu:Card Padding="16">
+                <utu:AutoLayout Orientation="Vertical" Spacing="8">
+                  <utu:AutoLayout Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="{Binding ResponseStatus}"
+                               Style="{StaticResource TitleSmall}"
+                               x:Uid="MainPage.Label.Status" />
+                    <TextBlock Text="{Binding ResponseMeta}"
+                               Style="{StaticResource LabelSmall}"
+                               Foreground="{ThemeResource OnSurfaceVariantBrush}"
+                               x:Uid="MainPage.Label.Meta" />
+                  </utu:AutoLayout>
+                  <TextBlock Text="{Binding ErrorMessage}"
+                             Style="{StaticResource BodySmall}"
+                             Foreground="{ThemeResource ErrorBrush}"
+                             x:Uid="MainPage.Label.Error" />
+                </utu:AutoLayout>
+              </utu:Card>
+
+              <utu:Card Padding="16" Height="320">
+                <ScrollViewer>
+                  <TextBlock Text="{Binding ResponseBody}"
+                             Style="{StaticResource BodySmall}"
+                             FontFamily="Consolas"
+                             TextWrapping="Wrap" />
+                </ScrollViewer>
+              </utu:Card>
+            </utu:AutoLayout>
+          </utu:AutoLayout>
+        </ScrollViewer>
+      </NavigationView.Content>
+    </NavigationView>
   </Grid>
 </Page>

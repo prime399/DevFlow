@@ -1,22 +1,24 @@
-using DevFlow.Services;
-using DevFlow.Shared;
-using System.Collections.Immutable;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
 
 namespace DevFlow.Presentation;
 
 public partial record MainModel
 {
     private readonly INavigator _navigator;
-    private readonly IDataItemService _dataItemService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public MainModel(
         IStringLocalizer localizer,
         IOptions<AppConfig> appInfo,
         INavigator navigator,
-        IDataItemService dataItemService)
+        IHttpClientFactory httpClientFactory)
     {
         _navigator = navigator;
-        _dataItemService = dataItemService;
+        _httpClientFactory = httpClientFactory;
         Title = "DevFlow";
         Title += $" - {localizer["ApplicationName"]}";
         Title += $" - {appInfo?.Value?.Environment}";
@@ -24,54 +26,158 @@ public partial record MainModel
 
     public string? Title { get; }
 
-    // MVUX Feed for data items - auto-fetches from API
-    public IListFeed<DataItem> Items => ListFeed.Async(async ct =>
+    public IReadOnlyList<string> Methods { get; } = new[] { "GET", "POST", "PUT", "PATCH", "DELETE" };
+
+    public IState<string> SelectedMethod => State<string>.Value(this, () => "GET");
+    public IState<string> RequestUrl => State<string>.Value(this, () => "https://echo.hoppscotch.io");
+    public IState<string> QueryParams => State<string>.Value(this, () => string.Empty);
+    public IState<string> HeadersText => State<string>.Value(this, () => "accept: application/json");
+    public IState<string> BodyText => State<string>.Value(this, () => "{\n  \"hello\": \"world\"\n}");
+
+    public IState<string> ResponseStatus => State<string>.Value(this, () => "Awaiting request");
+    public IState<string> ResponseMeta => State<string>.Value(this, () => string.Empty);
+    public IState<string> ResponseBody => State<string>.Value(this, () => string.Empty);
+    public IState<string> ErrorMessage => State<string>.Value(this, () => string.Empty);
+    public IState<bool> IsSending => State<bool>.Value(this, () => false);
+
+    public async ValueTask SendRequest(CancellationToken ct)
     {
-        var items = await _dataItemService.GetAllAsync(ct);
-        return items.ToImmutableList();
-    });
-
-    // State for new item input
-    public IState<string> NewItemTitle => State<string>.Value(this, () => string.Empty);
-    public IState<string> NewItemDescription => State<string>.Value(this, () => string.Empty);
-
-    // State to trigger refresh
-    private IState<int> RefreshTrigger => State<int>.Value(this, () => 0);
-
-    public async ValueTask AddItem(CancellationToken ct)
-    {
-        var title = await NewItemTitle;
-        var description = await NewItemDescription;
-
-        if (string.IsNullOrWhiteSpace(title)) return;
-
-        var newItem = new DataItem
+        if (await IsSending)
         {
-            Title = title!,
-            Description = description ?? string.Empty
-        };
+            return;
+        }
 
-        await _dataItemService.CreateAsync(newItem, ct);
+        var urlInput = await RequestUrl;
+        var methodName = await SelectedMethod ?? HttpMethod.Get.Method;
+        var queryText = await QueryParams ?? string.Empty;
+        var headersRaw = await HeadersText ?? string.Empty;
+        var bodyText = await BodyText ?? string.Empty;
 
-        // Clear inputs
-        await NewItemTitle.UpdateAsync(_ => string.Empty, ct);
-        await NewItemDescription.UpdateAsync(_ => string.Empty, ct);
+        if (string.IsNullOrWhiteSpace(urlInput))
+        {
+            await ErrorMessage.UpdateAsync(_ => "Enter a target URL to send the request.", ct);
+            return;
+        }
+
+        await ErrorMessage.UpdateAsync(_ => string.Empty, ct);
+        await IsSending.UpdateAsync(_ => true, ct);
+
+        try
+        {
+            var requestUri = BuildUri(urlInput, queryText);
+            using var request = new HttpRequestMessage(new HttpMethod(methodName), requestUri);
+            AddHeaders(request, headersRaw);
+
+            if (AllowsBody(methodName) && !string.IsNullOrWhiteSpace(bodyText))
+            {
+                request.Content = new StringContent(bodyText, Encoding.UTF8, "application/json");
+            }
+
+            var httpClient = _httpClientFactory.CreateClient("ApiTester");
+            var stopwatch = Stopwatch.StartNew();
+            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+            var responseBytes = await response.Content.ReadAsByteArrayAsync(ct);
+            stopwatch.Stop();
+
+            var responseText = await response.Content.ReadAsStringAsync(ct);
+
+            await ResponseStatus.UpdateAsync(_ => $"{(int)response.StatusCode} {response.ReasonPhrase}", ct);
+            await ResponseMeta.UpdateAsync(_ => $"Time: {stopwatch.ElapsedMilliseconds} ms    Size: {(responseBytes.Length / 1024d):0.00} KB", ct);
+            await ResponseBody.UpdateAsync(_ => responseText, ct);
+        }
+        catch (Exception ex)
+        {
+            await ErrorMessage.UpdateAsync(_ => ex.Message, ct);
+            await ResponseStatus.UpdateAsync(_ => "Request failed", ct);
+            await ResponseMeta.UpdateAsync(_ => string.Empty, ct);
+            await ResponseBody.UpdateAsync(_ => string.Empty, ct);
+        }
+        finally
+        {
+            await IsSending.UpdateAsync(_ => false, ct);
+        }
     }
 
-    public async ValueTask DeleteItem(DataItem item, CancellationToken ct)
+    public async ValueTask ResetResponse(CancellationToken ct)
     {
-        await _dataItemService.DeleteAsync(item.Id, ct);
+        await ResponseStatus.UpdateAsync(_ => "Awaiting request", ct);
+        await ResponseMeta.UpdateAsync(_ => string.Empty, ct);
+        await ResponseBody.UpdateAsync(_ => string.Empty, ct);
+        await ErrorMessage.UpdateAsync(_ => string.Empty, ct);
     }
 
-    public async ValueTask ToggleComplete(DataItem item, CancellationToken ct)
+    private static Uri BuildUri(string urlInput, string queryText)
     {
-        var updated = item with { IsCompleted = !item.IsCompleted };
-        await _dataItemService.UpdateAsync(item.Id, updated, ct);
+        var builder = new UriBuilder(urlInput);
+        var incomingQuery = BuildQueryString(queryText);
+        if (!string.IsNullOrWhiteSpace(incomingQuery))
+        {
+            var existing = builder.Query.TrimStart('?');
+            builder.Query = string.IsNullOrWhiteSpace(existing)
+                ? incomingQuery
+                : $"{existing}&{incomingQuery}";
+        }
+
+        return builder.Uri;
     }
 
-    public async Task GoToSecond()
+    private static string BuildQueryString(string queryText)
     {
-        var title = await NewItemTitle;
-        await _navigator.NavigateViewModelAsync<SecondModel>(this, data: new Entity(title ?? ""));
+        var pairs = ParseKeyValuePairs(queryText);
+        var encoded = pairs
+            .Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}")
+            .ToArray();
+        return string.Join("&", encoded);
     }
+
+    private static void AddHeaders(HttpRequestMessage request, string rawHeaders)
+    {
+        foreach (var (key, value) in ParseKeyValuePairs(rawHeaders))
+        {
+            if (!request.Headers.TryAddWithoutValidation(key, value))
+            {
+                request.Content ??= new StringContent(string.Empty);
+                _ = request.Content.Headers.TryAddWithoutValidation(key, value);
+            }
+        }
+    }
+
+    private static IEnumerable<KeyValuePair<string, string>> ParseKeyValuePairs(string rawText)
+    {
+        if (string.IsNullOrWhiteSpace(rawText))
+        {
+            yield break;
+        }
+
+        var lines = rawText.Split(Environment.NewLine);
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                continue;
+            }
+
+            var separatorIndex = trimmed.IndexOf(':');
+            separatorIndex = separatorIndex < 0 ? trimmed.IndexOf('=') : separatorIndex;
+            if (separatorIndex <= 0 || separatorIndex >= trimmed.Length - 1)
+            {
+                continue;
+            }
+
+            var key = trimmed[..separatorIndex].Trim();
+            var value = trimmed[(separatorIndex + 1)..].Trim();
+
+            if (string.IsNullOrEmpty(key))
+            {
+                continue;
+            }
+
+            yield return new KeyValuePair<string, string>(key, value);
+        }
+    }
+
+    private static bool AllowsBody(string methodName) =>
+        !string.Equals(methodName, HttpMethod.Get.Method, StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(methodName, HttpMethod.Head.Method, StringComparison.OrdinalIgnoreCase);
 }

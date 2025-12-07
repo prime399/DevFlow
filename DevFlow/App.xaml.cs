@@ -74,6 +74,7 @@ public partial class App : Application
                     {
                         client.BaseAddress = new Uri(apiBaseUrl);
                     });
+                    services.AddHttpClient("ApiTester");
                 })
                 .ConfigureServices((context, services) =>
                 {
