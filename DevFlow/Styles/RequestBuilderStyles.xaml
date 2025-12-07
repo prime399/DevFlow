@@ -257,6 +257,7 @@
     <Setter Property="FontFamily" Value="{StaticResource MonospaceFontFamily}" />
     <Setter Property="PlaceholderForeground" Value="{StaticResource TextSubtleBrush}" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="IsSpellCheckEnabled" Value="False" />
   </Style>
 
   <!-- Icon Button Style -->

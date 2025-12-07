@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using DevFlow.Models;
 
 namespace DevFlow.Presentation;
 
@@ -30,9 +32,45 @@ public partial record MainModel
 
     public IState<string> SelectedMethod => State<string>.Value(this, () => "GET");
     public IState<string> RequestUrl => State<string>.Value(this, () => "https://echo.hoppscotch.io");
-    public IState<string> QueryParams => State<string>.Value(this, () => string.Empty);
     public IState<string> HeadersText => State<string>.Value(this, () => "accept: application/json");
     public IState<string> BodyText => State<string>.Value(this, () => "{\n  \"hello\": \"world\"\n}");
+
+    public ObservableCollection<RequestParameter> Parameters { get; } = new()
+    {
+        new RequestParameter("", "", "", true)
+    };
+
+    public void AddParameter()
+    {
+        Parameters.Add(new RequestParameter("", "", "", true));
+    }
+
+    public void DeleteParameter(RequestParameter parameter)
+    {
+        if (Parameters.Count > 1)
+        {
+            Parameters.Remove(parameter);
+        }
+        else
+        {
+            parameter.ParamKey = string.Empty;
+            parameter.ParamValue = string.Empty;
+            parameter.Description = string.Empty;
+            parameter.IsEnabled = true;
+        }
+    }
+
+    public void ClearAllParameters()
+    {
+        Parameters.Clear();
+        Parameters.Add(new RequestParameter("", "", "", true));
+    }
+
+    private string BuildQueryParamsFromCollection()
+    {
+        var enabledParams = Parameters.Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.ParamKey));
+        return string.Join("\n", enabledParams.Select(p => $"{p.ParamKey}:{p.ParamValue}"));
+    }
 
     public IState<string> ResponseStatus => State<string>.Value(this, () => "Awaiting request");
     public IState<string> ResponseMeta => State<string>.Value(this, () => string.Empty);
@@ -49,7 +87,7 @@ public partial record MainModel
 
         var urlInput = await RequestUrl;
         var methodName = await SelectedMethod ?? HttpMethod.Get.Method;
-        var queryText = await QueryParams ?? string.Empty;
+        var queryText = BuildQueryParamsFromCollection();
         var headersRaw = await HeadersText ?? string.Empty;
         var bodyText = await BodyText ?? string.Empty;
 
