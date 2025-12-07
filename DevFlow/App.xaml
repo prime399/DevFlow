@@ -20,8 +20,15 @@
           </utum:MaterialToolkitTheme.FontOverrideDictionary> -->
         </utum:MaterialToolkitTheme>
 
+        <!-- App Theme Colors (must be first) -->
+        <ResourceDictionary Source="ms-appx:///Styles/AppTheme.xaml" />
+
+        <!-- Icons library -->
+        <ResourceDictionary Source="ms-appx:///Styles/Icons.xaml" />
+
         <!-- Custom control styles -->
         <ResourceDictionary Source="ms-appx:///Styles/NavigationStyles.xaml" />
+        <ResourceDictionary Source="ms-appx:///Styles/RequestBuilderStyles.xaml" />
       </ResourceDictionary.MergedDictionaries>
 
       <!-- Add resources here -->

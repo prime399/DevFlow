@@ -9,10 +9,10 @@
     <Setter Property="MinHeight" Value="44" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Background" Value="{ThemeResource SubtleFillColorTransparentBrush}" />
-    <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ToggleButton">
@@ -45,7 +45,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                              Value="{StaticResource HoverBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                   </Storyboard>
                 </VisualState>
@@ -54,7 +54,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                              Value="{StaticResource PressedBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                   </Storyboard>
                 </VisualState>
@@ -91,7 +91,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                              Value="{StaticResource HoverBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                     <DoubleAnimation Storyboard.TargetName="MenuIcon"
                                      Storyboard.TargetProperty="Opacity"
@@ -112,7 +112,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                              Value="{StaticResource PressedBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                     <DoubleAnimation Storyboard.TargetName="MenuIcon"
                                      Storyboard.TargetProperty="Opacity"
@@ -143,7 +143,7 @@
     <Setter Property="MinHeight" Value="44" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Template">
@@ -163,7 +163,7 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     CornerRadius="2"
-                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                    Background="{StaticResource AccentPrimaryBrush}"
                     Opacity="0" />
             <Grid Padding="{TemplateBinding Padding}">
               <Grid.ColumnDefinitions>
@@ -195,7 +195,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                              Value="{StaticResource HoverBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                     <DoubleAnimation Storyboard.TargetName="ScaleTransform"
                                      Storyboard.TargetProperty="ScaleX"
@@ -220,7 +220,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                              Value="{StaticResource PressedBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                     <DoubleAnimation Storyboard.TargetName="ScaleTransform"
                                      Storyboard.TargetProperty="ScaleX"
@@ -245,7 +245,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource AccentFillColorTertiaryBrush}" />
+                                              Value="{StaticResource SelectedBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                     <DoubleAnimation Storyboard.TargetName="SelectionIndicator"
                                      Storyboard.TargetProperty="Opacity"
@@ -262,7 +262,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource AccentFillColorSecondaryBrush}" />
+                                              Value="{StaticResource HoverBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                     <DoubleAnimation Storyboard.TargetName="SelectionIndicator"
                                      Storyboard.TargetProperty="Opacity"
@@ -291,7 +291,7 @@
                     <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
                                                    Storyboard.TargetProperty="Background">
                       <DiscreteObjectKeyFrame KeyTime="0"
-                                              Value="{ThemeResource AccentFillColorTertiaryBrush}" />
+                                              Value="{StaticResource PressedBrush}" />
                     </ObjectAnimationUsingKeyFrames>
                     <DoubleAnimation Storyboard.TargetName="SelectionIndicator"
                                      Storyboard.TargetProperty="Opacity"

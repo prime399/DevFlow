@@ -3,10 +3,10 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:utu="using:Uno.Toolkit.UI"
       NavigationCacheMode="Required"
-      Background="{ThemeResource BackgroundBrush}">
+      Background="{StaticResource AppBackgroundBrush}">
 
   <Grid utu:SafeArea.Insets="VisibleBounds"
-        Background="{ThemeResource BackgroundBrush}">
+        Background="{StaticResource AppBackgroundBrush}">
     <NavigationView PaneDisplayMode="Left"
                     IsBackButtonVisible="Collapsed"
                     IsPaneOpen="True"
@@ -25,165 +25,316 @@
                             IsSelected="True"
                             x:Uid="MainPage.Nav.Rest">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE774;" />
+            <FontIcon Glyph="{StaticResource IconGlyphGlobe}" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="GraphQL"
                             x:Uid="MainPage.Nav.GraphQL">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE9D9;" />
+            <FontIcon Glyph="{StaticResource IconGlyphGraph}" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="Realtime"
                             x:Uid="MainPage.Nav.Realtime">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE704;" />
+            <FontIcon Glyph="{StaticResource IconGlyphRealtime}" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="Settings"
                             x:Uid="MainPage.Nav.Settings">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE115;" />
+            <FontIcon Glyph="{StaticResource IconGlyphSettings}" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
       </NavigationView.MenuItems>
 
       <NavigationView.Content>
-        <ScrollViewer>
-          <utu:AutoLayout Orientation="Vertical"
-                          Padding="24"
-                          Spacing="16">
+        <Grid RowDefinitions="Auto,Auto,*">
+          <!-- Request URL Bar -->
+          <Border Grid.Row="0"
+                  Background="{StaticResource RequestBarBackgroundBrush}"
+                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                  BorderThickness="0,0,0,1"
+                  Padding="8">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+              <!-- Method Selector -->
+              <Border Grid.Column="0"
+                      Background="{StaticResource InputBackgroundBrush}"
+                      CornerRadius="6,0,0,6"
+                      BorderBrush="{StaticResource RequestBarBorderBrush}"
+                      BorderThickness="1,1,0,1"
+                      Padding="4,0">
+                <ComboBox ItemsSource="{Binding Methods}"
+                          SelectedItem="{Binding SelectedMethod, Mode=TwoWay}"
+                          Style="{StaticResource MethodComboBoxStyle}"
+                          x:Uid="MainPage.ComboBox.Method" />
+              </Border>
 
-            <utu:AutoLayout Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Title}"
-                         Style="{StaticResource TitleLarge}"
-                         x:Uid="MainPage.Label.Title" />
-              <utu:Chip Content="Workspace"
-                        HorizontalAlignment="Left" />
-              <ProgressRing Width="24"
-                            Height="24"
-                            IsActive="{Binding IsSending}" />
-            </utu:AutoLayout>
-
-            <utu:Card Padding="16">
-              <utu:AutoLayout Orientation="Vertical" Spacing="12">
-                <Grid ColumnDefinitions="Auto,*,Auto,Auto"
-                      HorizontalAlignment="Stretch">
-                  <ComboBox Grid.Column="0"
-                            ItemsSource="{Binding Methods}"
-                            SelectedItem="{Binding SelectedMethod, Mode=TwoWay}"
-                            MinWidth="120"
-                            x:Uid="MainPage.ComboBox.Method"
-                            HorizontalAlignment="Stretch" />
-                  <TextBox Grid.Column="1"
+              <!-- URL Input -->
+              <Border Grid.Column="1"
+                      Background="{StaticResource InputBackgroundBrush}"
+                      BorderBrush="{StaticResource RequestBarBorderBrush}"
+                      BorderThickness="1"
+                      CornerRadius="0">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox Grid.Column="0"
                            Text="{Binding RequestUrl, Mode=TwoWay}"
-                           PlaceholderText="https://api.example.com/resource"
-                           x:Uid="MainPage.TextBox.Url"
-                           HorizontalAlignment="Stretch" />
-                  <Button Grid.Column="2"
-                          Content="Send"
-                          Command="{Binding SendRequest}"
-                          Style="{StaticResource FilledButtonStyle}"
-                          x:Uid="MainPage.Button.Send"
-                          HorizontalAlignment="Stretch" />
-                  <Button Grid.Column="3"
-                          Content="Reset"
-                          Command="{Binding ResetResponse}"
-                          Style="{StaticResource FilledTonalButtonStyle}"
-                          x:Uid="MainPage.Button.Reset"
-                          HorizontalAlignment="Stretch" />
+                           PlaceholderText="https://api.example.com/endpoint"
+                           Style="{StaticResource UrlTextBoxStyle}"
+                           x:Uid="MainPage.TextBox.Url" />
+                  <ProgressRing Grid.Column="1"
+                                Width="20"
+                                Height="20"
+                                Margin="8,0"
+                                IsActive="{Binding IsSending}" />
                 </Grid>
+              </Border>
 
-                <TextBlock Text="Craft requests with method, URL, and optional query, headers, or body."
-                           Style="{StaticResource BodySmall}"
-                           Foreground="{ThemeResource OnSurfaceVariantBrush}" />
-              </utu:AutoLayout>
-            </utu:Card>
+              <!-- Send Button -->
+              <Button Grid.Column="2"
+                      Content="Send"
+                      Command="{Binding SendRequest}"
+                      Style="{StaticResource SendButtonStyle}"
+                      Margin="8,0,4,0"
+                      x:Uid="MainPage.Button.Send" />
 
-            <Pivot>
-              <PivotItem Header="Parameters"
-                         x:Uid="MainPage.Pivot.Parameters">
-                <utu:Card Padding="16">
-                  <utu:AutoLayout Orientation="Vertical" Spacing="8">
-                    <TextBlock Text="Enter query parameters (one per line, key=value)."
-                               Style="{StaticResource LabelLarge}" />
-                    <TextBox AcceptsReturn="True"
-                             Text="{Binding QueryParams, Mode=TwoWay}"
-                             PlaceholderText="userId=1"
-                             x:Uid="MainPage.TextBox.Query"
-                             Height="100"
-                             TextWrapping="Wrap" />
-                  </utu:AutoLayout>
-                </utu:Card>
-              </PivotItem>
+              <!-- Save Button -->
+              <Button Grid.Column="3"
+                      Style="{StaticResource SaveButtonStyle}"
+                      Margin="4,0,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <FontIcon Glyph="{StaticResource IconGlyphSave}" FontSize="14" />
+                  <TextBlock Text="Save" FontFamily="{StaticResource AppFontFamilyMedium}" />
+                </StackPanel>
+              </Button>
+            </Grid>
+          </Border>
 
-              <PivotItem Header="Headers"
-                         x:Uid="MainPage.Pivot.Headers">
-                <utu:Card Padding="16">
-                  <utu:AutoLayout Orientation="Vertical" Spacing="8">
-                    <TextBlock Text="Provide headers (key: value)."
-                               Style="{StaticResource LabelLarge}" />
-                    <TextBox AcceptsReturn="True"
-                             Text="{Binding HeadersText, Mode=TwoWay}"
-                             PlaceholderText="accept: application/json"
-                             x:Uid="MainPage.TextBox.Headers"
-                             Height="100"
-                             TextWrapping="Wrap" />
-                  </utu:AutoLayout>
-                </utu:Card>
-              </PivotItem>
+          <!-- Tab Navigation Bar -->
+          <Border Grid.Row="1"
+                  Background="{StaticResource TabBarBackgroundBrush}"
+                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                  BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+              <!-- Left Tabs -->
+              <StackPanel Grid.Column="0"
+                          Orientation="Horizontal">
+                <Button Content="Parameters"
+                        Style="{StaticResource RequestTabActiveStyle}"
+                        x:Uid="MainPage.Tab.Parameters" />
+                <Button Content="Body"
+                        Style="{StaticResource RequestTabStyle}"
+                        x:Uid="MainPage.Tab.Body" />
+                <Button Content="Headers"
+                        Style="{StaticResource RequestTabStyle}"
+                        x:Uid="MainPage.Tab.Headers" />
+                <Button Content="Authorization"
+                        Style="{StaticResource RequestTabStyle}"
+                        x:Uid="MainPage.Tab.Auth" />
+                <Button Content="Pre-request Script"
+                        Style="{StaticResource RequestTabStyle}"
+                        x:Uid="MainPage.Tab.PreScript" />
+                <Button Content="Post-request Script"
+                        Style="{StaticResource RequestTabStyle}"
+                        x:Uid="MainPage.Tab.PostScript" />
+              </StackPanel>
 
-              <PivotItem Header="Body"
-                         x:Uid="MainPage.Pivot.Body">
-                <utu:Card Padding="16">
-                  <utu:AutoLayout Orientation="Vertical" Spacing="8">
-                    <TextBlock Text="JSON or raw body."
-                               Style="{StaticResource LabelLarge}" />
-                    <TextBox AcceptsReturn="True"
-                             Text="{Binding BodyText, Mode=TwoWay}"
-                             PlaceholderText="Raw body (JSON)"
-                             x:Uid="MainPage.TextBox.Body"
-                             Height="160"
-                             FontFamily="Consolas"
-                             TextWrapping="Wrap" />
-                  </utu:AutoLayout>
-                </utu:Card>
-              </PivotItem>
-            </Pivot>
+              <!-- Right side - Variables link -->
+              <StackPanel Grid.Column="1"
+                          Orientation="Horizontal"
+                          Margin="0,0,12,0">
+                <Button Style="{StaticResource IconButtonStyle}">
+                  <FontIcon Glyph="{StaticResource IconGlyphVariables}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
+                </Button>
+                <TextBlock Text="Variables"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontFamily="{StaticResource AppFontFamily}"
+                           VerticalAlignment="Center"
+                           FontSize="13"
+                           Margin="4,0,0,0" />
+              </StackPanel>
+            </Grid>
+          </Border>
 
-            <utu:AutoLayout Orientation="Vertical" Spacing="8">
-              <TextBlock Text="Response"
-                         Style="{StaticResource TitleMedium}"
-                         x:Uid="MainPage.Label.Response" />
-              <utu:Card Padding="16">
-                <utu:AutoLayout Orientation="Vertical" Spacing="8">
-                  <utu:AutoLayout Orientation="Horizontal" Spacing="12">
-                    <TextBlock Text="{Binding ResponseStatus}"
-                               Style="{StaticResource TitleSmall}"
-                               x:Uid="MainPage.Label.Status" />
-                    <TextBlock Text="{Binding ResponseMeta}"
-                               Style="{StaticResource LabelSmall}"
-                               Foreground="{ThemeResource OnSurfaceVariantBrush}"
-                               x:Uid="MainPage.Label.Meta" />
-                  </utu:AutoLayout>
-                  <TextBlock Text="{Binding ErrorMessage}"
-                             Style="{StaticResource BodySmall}"
-                             Foreground="{ThemeResource ErrorBrush}"
-                             x:Uid="MainPage.Label.Error" />
-                </utu:AutoLayout>
-              </utu:Card>
+          <!-- Content Area -->
+          <ScrollViewer Grid.Row="2"
+                        Background="{StaticResource TabBarBackgroundBrush}">
+            <Grid RowDefinitions="Auto,Auto,*" Padding="0">
+              <!-- Query Parameters Section -->
+              <Border Grid.Row="0"
+                      Background="{StaticResource RequestBarBackgroundBrush}"
+                      BorderBrush="{StaticResource RequestBarBorderBrush}"
+                      BorderThickness="0,0,0,1"
+                      Padding="16,12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Query Parameters"
+                             Foreground="{StaticResource TextSecondaryBrush}"
+                             FontSize="13"
+                             VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                    <Button Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Copy">
+                      <FontIcon Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                    </Button>
+                    <Button Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Edit">
+                      <FontIcon Glyph="{StaticResource IconGlyphEdit}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                    </Button>
+                    <Button Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Add Parameter">
+                      <FontIcon Glyph="{StaticResource IconGlyphAdd}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                    </Button>
+                  </StackPanel>
+                </Grid>
+              </Border>
 
-              <utu:Card Padding="16" Height="320">
-                <ScrollViewer>
-                  <TextBlock Text="{Binding ResponseBody}"
-                             Style="{StaticResource BodySmall}"
-                             FontFamily="Consolas"
-                             TextWrapping="Wrap" />
-                </ScrollViewer>
-              </utu:Card>
-            </utu:AutoLayout>
-          </utu:AutoLayout>
-        </ScrollViewer>
+              <!-- Parameters Table Header -->
+              <Border Grid.Row="1"
+                      Background="{StaticResource TabBarBackgroundBrush}"
+                      BorderBrush="{StaticResource RequestBarBorderBrush}"
+                      BorderThickness="0,0,0,1"
+                      Padding="0">
+                <Grid ColumnDefinitions="40,*,*,*,80">
+                  <Border Grid.Column="0"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,1,0"
+                          Padding="12,10" />
+                  <Border Grid.Column="1"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,1,0"
+                          Padding="12,10">
+                    <TextBlock Text="Key"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="12" />
+                  </Border>
+                  <Border Grid.Column="2"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,1,0"
+                          Padding="12,10">
+                    <TextBlock Text="Value"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="12" />
+                  </Border>
+                  <Border Grid.Column="3"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,1,0"
+                          Padding="12,10">
+                    <TextBlock Text="Description"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="12" />
+                  </Border>
+                  <Border Grid.Column="4" Padding="12,10" />
+                </Grid>
+              </Border>
+
+              <!-- Parameters Table Rows -->
+              <StackPanel Grid.Row="2">
+                <!-- Sample Parameter Row -->
+                <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1">
+                  <Grid ColumnDefinitions="40,*,*,*,80">
+                    <Border Grid.Column="0"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="8">
+                      <CheckBox IsChecked="True" MinWidth="0" />
+                    </Border>
+                    <Border Grid.Column="1"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0">
+                      <TextBox PlaceholderText="Key"
+                               Style="{StaticResource ParameterTextBoxStyle}" />
+                    </Border>
+                    <Border Grid.Column="2"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0">
+                      <TextBox PlaceholderText="Value"
+                               Style="{StaticResource ParameterTextBoxStyle}" />
+                    </Border>
+                    <Border Grid.Column="3"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0">
+                      <TextBox PlaceholderText="Description"
+                               Style="{StaticResource ParameterTextBoxStyle}" />
+                    </Border>
+                    <StackPanel Grid.Column="4"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="0">
+                      <Button Style="{StaticResource IconButtonStyle}">
+                        <FontIcon Glyph="{StaticResource IconGlyphCheck}" FontSize="12" Foreground="{StaticResource SuccessBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}">
+                        <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="12" Foreground="{StaticResource ErrorBrush}" />
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+
+                <!-- Response Section (collapsible) -->
+                <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                        Margin="0,16,0,0"
+                        CornerRadius="8"
+                        Padding="16">
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Response"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                        <Border Background="{StaticResource SuccessBrush}"
+                                CornerRadius="4"
+                                Padding="8,4"
+                                Visibility="{Binding ResponseStatus, Converter={StaticResource NullToCollapsedConverter}, FallbackValue=Collapsed}">
+                          <TextBlock Text="{Binding ResponseStatus}"
+                                     Foreground="{StaticResource AppBackgroundBrush}"
+                                     FontSize="12"
+                                     FontWeight="SemiBold" />
+                        </Border>
+                        <TextBlock Text="{Binding ResponseMeta}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                        <Button Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Copy Response">
+                          <FontIcon Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                        </Button>
+                        <Button Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding ResetResponse}"
+                                ToolTipService.ToolTip="Clear Response">
+                          <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                        </Button>
+                      </StackPanel>
+                    </Grid>
+
+                    <!-- Error Message -->
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource ErrorBrush}"
+                               FontSize="12"
+                               Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}, FallbackValue=Collapsed}" />
+
+                    <!-- Response Body -->
+                    <Border Background="{StaticResource InputBackgroundBrush}"
+                            CornerRadius="6"
+                            Padding="12"
+                            MinHeight="200"
+                            MaxHeight="400">
+                      <ScrollViewer>
+                        <TextBlock Text="{Binding ResponseBody}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonospaceFontFamily}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+                      </ScrollViewer>
+                    </Border>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Grid>
+          </ScrollViewer>
+        </Grid>
       </NavigationView.Content>
     </NavigationView>
   </Grid>

@@ -1,0 +1,183 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ============================================== -->
+  <!-- DEVFLOW ICON LIBRARY                          -->
+  <!-- Using Fluent UI System Icons (Segoe Fluent)   -->
+  <!-- Reference: https://aka.ms/fluentui-system-icons -->
+  <!-- ============================================== -->
+
+  <!-- Icon Font Family -->
+  <FontFamily x:Key="FluentIconsFontFamily">ms-appx:///Uno.Fonts.Fluent/Fonts/uno-fluentui-assets.ttf#Symbols</FontFamily>
+  <FontFamily x:Key="SymbolsFontFamily">{StaticResource SymbolThemeFontFamily}</FontFamily>
+
+  <!-- ============================================== -->
+  <!-- NAVIGATION ICONS                              -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphMenu">&#xE700;</x:String>
+  <x:String x:Key="IconGlyphBack">&#xE72B;</x:String>
+  <x:String x:Key="IconGlyphForward">&#xE72A;</x:String>
+  <x:String x:Key="IconGlyphHome">&#xE80F;</x:String>
+  <x:String x:Key="IconGlyphSettings">&#xE713;</x:String>
+  <x:String x:Key="IconGlyphMore">&#xE712;</x:String>
+
+  <!-- ============================================== -->
+  <!-- HTTP / API ICONS                              -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphGlobe">&#xE774;</x:String>
+  <x:String x:Key="IconGlyphSend">&#xE724;</x:String>
+  <x:String x:Key="IconGlyphCloud">&#xE753;</x:String>
+  <x:String x:Key="IconGlyphCloudUpload">&#xE898;</x:String>
+  <x:String x:Key="IconGlyphCloudDownload">&#xE896;</x:String>
+  <x:String x:Key="IconGlyphSync">&#xE895;</x:String>
+  <x:String x:Key="IconGlyphRefresh">&#xE72C;</x:String>
+  <x:String x:Key="IconGlyphLink">&#xE71B;</x:String>
+  <x:String x:Key="IconGlyphWebsite">&#xEB41;</x:String>
+  <x:String x:Key="IconGlyphApi">&#xE943;</x:String>
+
+  <!-- ============================================== -->
+  <!-- ACTION ICONS                                  -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphAdd">&#xE710;</x:String>
+  <x:String x:Key="IconGlyphDelete">&#xE74D;</x:String>
+  <x:String x:Key="IconGlyphEdit">&#xE70F;</x:String>
+  <x:String x:Key="IconGlyphSave">&#xE74E;</x:String>
+  <x:String x:Key="IconGlyphCancel">&#xE711;</x:String>
+  <x:String x:Key="IconGlyphClose">&#xE8BB;</x:String>
+  <x:String x:Key="IconGlyphCheck">&#xE73E;</x:String>
+  <x:String x:Key="IconGlyphCopy">&#xE8C8;</x:String>
+  <x:String x:Key="IconGlyphPaste">&#xE77F;</x:String>
+  <x:String x:Key="IconGlyphCut">&#xE8C6;</x:String>
+  <x:String x:Key="IconGlyphUndo">&#xE7A7;</x:String>
+  <x:String x:Key="IconGlyphRedo">&#xE7A6;</x:String>
+  <x:String x:Key="IconGlyphSearch">&#xE721;</x:String>
+  <x:String x:Key="IconGlyphFilter">&#xE71C;</x:String>
+  <x:String x:Key="IconGlyphSort">&#xE8CB;</x:String>
+  <x:String x:Key="IconGlyphShare">&#xE72D;</x:String>
+  <x:String x:Key="IconGlyphDownload">&#xE896;</x:String>
+  <x:String x:Key="IconGlyphUpload">&#xE898;</x:String>
+  <x:String x:Key="IconGlyphPlay">&#xE768;</x:String>
+  <x:String x:Key="IconGlyphPause">&#xE769;</x:String>
+  <x:String x:Key="IconGlyphStop">&#xE71A;</x:String>
+
+  <!-- ============================================== -->
+  <!-- CONTENT / DATA ICONS                          -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphDocument">&#xE8A5;</x:String>
+  <x:String x:Key="IconGlyphFolder">&#xE8B7;</x:String>
+  <x:String x:Key="IconGlyphFolderOpen">&#xE838;</x:String>
+  <x:String x:Key="IconGlyphFile">&#xE7C3;</x:String>
+  <x:String x:Key="IconGlyphCode">&#xE943;</x:String>
+  <x:String x:Key="IconGlyphJson">&#xE8A5;</x:String>
+  <x:String x:Key="IconGlyphDatabase">&#xEE94;</x:String>
+  <x:String x:Key="IconGlyphTable">&#xE80A;</x:String>
+  <x:String x:Key="IconGlyphList">&#xE8FD;</x:String>
+  <x:String x:Key="IconGlyphGrid">&#xE80A;</x:String>
+
+  <!-- ============================================== -->
+  <!-- REQUEST BUILDER ICONS                         -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphParameters">&#xE8A7;</x:String>
+  <x:String x:Key="IconGlyphHeaders">&#xE8C1;</x:String>
+  <x:String x:Key="IconGlyphBody">&#xE8A5;</x:String>
+  <x:String x:Key="IconGlyphAuth">&#xE8D7;</x:String>
+  <x:String x:Key="IconGlyphScript">&#xE943;</x:String>
+  <x:String x:Key="IconGlyphVariables">&#xE8A7;</x:String>
+  <x:String x:Key="IconGlyphEnvironment">&#xE8F1;</x:String>
+  <x:String x:Key="IconGlyphHistory">&#xE81C;</x:String>
+  <x:String x:Key="IconGlyphCollection">&#xE8B7;</x:String>
+
+  <!-- ============================================== -->
+  <!-- STATUS / FEEDBACK ICONS                       -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphSuccess">&#xE73E;</x:String>
+  <x:String x:Key="IconGlyphError">&#xE783;</x:String>
+  <x:String x:Key="IconGlyphWarning">&#xE7BA;</x:String>
+  <x:String x:Key="IconGlyphInfo">&#xE946;</x:String>
+  <x:String x:Key="IconGlyphHelp">&#xE897;</x:String>
+  <x:String x:Key="IconGlyphLock">&#xE72E;</x:String>
+  <x:String x:Key="IconGlyphUnlock">&#xE785;</x:String>
+  <x:String x:Key="IconGlyphVisible">&#xE7B3;</x:String>
+  <x:String x:Key="IconGlyphHidden">&#xED1A;</x:String>
+
+  <!-- ============================================== -->
+  <!-- CONNECTIVITY ICONS                            -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphWifi">&#xE701;</x:String>
+  <x:String x:Key="IconGlyphEthernet">&#xE839;</x:String>
+  <x:String x:Key="IconGlyphDisconnected">&#xEB55;</x:String>
+  <x:String x:Key="IconGlyphStreaming">&#xE93E;</x:String>
+  <x:String x:Key="IconGlyphRealtime">&#xE704;</x:String>
+
+  <!-- ============================================== -->
+  <!-- GRAPH / VISUALIZATION ICONS                   -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphChart">&#xE9D9;</x:String>
+  <x:String x:Key="IconGlyphGraph">&#xE9D9;</x:String>
+  <x:String x:Key="IconGlyphTimeline">&#xE916;</x:String>
+
+  <!-- ============================================== -->
+  <!-- UI / LAYOUT ICONS                             -->
+  <!-- ============================================== -->
+  <x:String x:Key="IconGlyphExpand">&#xE740;</x:String>
+  <x:String x:Key="IconGlyphCollapse">&#xE73F;</x:String>
+  <x:String x:Key="IconGlyphMaximize">&#xE922;</x:String>
+  <x:String x:Key="IconGlyphMinimize">&#xE921;</x:String>
+  <x:String x:Key="IconGlyphFullscreen">&#xE740;</x:String>
+  <x:String x:Key="IconGlyphSplitView">&#xE8A8;</x:String>
+  <x:String x:Key="IconGlyphDarkMode">&#xE708;</x:String>
+  <x:String x:Key="IconGlyphLightMode">&#xE706;</x:String>
+
+  <!-- ============================================== -->
+  <!-- REUSABLE ICON STYLES                          -->
+  <!-- ============================================== -->
+
+  <!-- Small Icon (12px) -->
+  <Style x:Key="SmallIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+  </Style>
+
+  <!-- Regular Icon (16px) -->
+  <Style x:Key="RegularIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+  </Style>
+
+  <!-- Large Icon (20px) -->
+  <Style x:Key="LargeIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+  </Style>
+
+  <!-- Navigation Icon -->
+  <Style x:Key="NavIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+  </Style>
+
+  <!-- Action Icon (for buttons) -->
+  <Style x:Key="ActionIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+  </Style>
+
+  <!-- Success Icon -->
+  <Style x:Key="SuccessIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+  </Style>
+
+  <!-- Error Icon -->
+  <Style x:Key="ErrorIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+  </Style>
+
+  <!-- Warning Icon -->
+  <Style x:Key="WarningIconStyle" TargetType="FontIcon">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+  </Style>
+
+</ResourceDictionary>

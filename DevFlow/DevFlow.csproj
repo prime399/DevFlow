@@ -2,6 +2,12 @@
   <ItemGroup>
     <ProjectReference Include="..\DevFlow.Shared\DevFlow.Shared.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fluent Icons Font -->
+    <PackageReference Include="Uno.Fonts.Fluent" />
+  </ItemGroup>
+  
   <PropertyGroup>
     <TargetFrameworks>net10.0-browserwasm;net10.0-desktop</TargetFrameworks>
 
