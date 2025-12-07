@@ -19,6 +19,9 @@
             </ResourceDictionary>
           </utum:MaterialToolkitTheme.FontOverrideDictionary> -->
         </utum:MaterialToolkitTheme>
+
+        <!-- Custom control styles -->
+        <ResourceDictionary Source="ms-appx:///Styles/NavigationStyles.xaml" />
       </ResourceDictionary.MergedDictionaries>
 
       <!-- Add resources here -->

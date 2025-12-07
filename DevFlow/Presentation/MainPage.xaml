@@ -11,32 +11,39 @@
                     IsBackButtonVisible="Collapsed"
                     IsPaneOpen="True"
                     OpenPaneLength="240"
-                    CompactPaneLength="56"
+                    CompactPaneLength="64"
+                    IsSettingsVisible="False"
                     PaneTitle="DevFlow API Lab">
+      <NavigationView.PaneToggleButtonStyle>
+        <StaticResource ResourceKey="AnimatedPaneToggleButtonStyle" />
+      </NavigationView.PaneToggleButtonStyle>
+      <NavigationView.MenuItemContainerStyle>
+        <StaticResource ResourceKey="AnimatedNavigationViewItemStyle" />
+      </NavigationView.MenuItemContainerStyle>
       <NavigationView.MenuItems>
         <NavigationViewItem Content="REST"
                             IsSelected="True"
                             x:Uid="MainPage.Nav.Rest">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE7F5;" />
+            <FontIcon Glyph="&#xE774;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="GraphQL"
                             x:Uid="MainPage.Nav.GraphQL">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xF2B7;" />
+            <FontIcon Glyph="&#xE9D9;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="Realtime"
                             x:Uid="MainPage.Nav.Realtime">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE95A;" />
+            <FontIcon Glyph="&#xE704;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="Settings"
                             x:Uid="MainPage.Nav.Settings">
           <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE713;" />
+            <FontIcon Glyph="&#xE115;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
       </NavigationView.MenuItems>
