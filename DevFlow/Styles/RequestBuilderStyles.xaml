@@ -11,18 +11,29 @@
   <SolidColorBrush x:Key="RequestBarBorderBrush" Color="{StaticResource BorderColor}" />
   <SolidColorBrush x:Key="TabBarBackgroundBrush" Color="{StaticResource AppBackgroundColor}" />
   <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource OverlayColor}" />
-  <SolidColorBrush x:Key="SendButtonBrush" Color="{StaticResource SuccessColor}" />
-  <SolidColorBrush x:Key="SendButtonHoverBrush" Color="#059669" />
   <SolidColorBrush x:Key="SaveButtonBrush" Color="{StaticResource AccentPrimaryColor}" />
+  
+  <!-- Send Button Colors (High Contrast) -->
+  <Color x:Key="SendButtonColor">#22C55E</Color>
+  <Color x:Key="SendButtonHoverColor">#16A34A</Color>
+  <Color x:Key="SendButtonTextColor">#052E16</Color>
+  <SolidColorBrush x:Key="SendButtonBrush" Color="{StaticResource SendButtonColor}" />
+  <SolidColorBrush x:Key="SendButtonHoverBrush" Color="{StaticResource SendButtonHoverColor}" />
+  <SolidColorBrush x:Key="SendButtonTextBrush" Color="{StaticResource SendButtonTextColor}" />
+  
+  <!-- Method Selector Colors -->
+  <Color x:Key="MethodSelectorBgColor">#1E1E2E</Color>
+  <SolidColorBrush x:Key="MethodSelectorBgBrush" Color="{StaticResource MethodSelectorBgColor}" />
 
   <!-- Send Button Style -->
   <Style x:Key="SendButtonStyle" TargetType="Button">
     <Setter Property="Background" Value="{StaticResource SendButtonBrush}" />
-    <Setter Property="Foreground" Value="White" />
+    <Setter Property="Foreground" Value="{StaticResource SendButtonTextBrush}" />
     <Setter Property="Padding" Value="20,10" />
     <Setter Property="CornerRadius" Value="6" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilySemiBold}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Button">
@@ -110,19 +121,64 @@
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="12,10" />
     <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontFamily" Value="{StaticResource MonospaceFontFamily}" />
     <Setter Property="PlaceholderForeground" Value="{StaticResource TextMutedBrush}" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
 
   <!-- Method ComboBox Style -->
   <Style x:Key="MethodComboBoxStyle" TargetType="ComboBox">
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+    <Setter Property="Background" Value="{StaticResource MethodSelectorBgBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource HttpGetBrush}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="12,8" />
-    <Setter Property="MinWidth" Value="100" />
+    <Setter Property="MinWidth" Value="110" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
+  </Style>
+
+  <!-- HTTP Method Text Styles (for use in ItemTemplate) -->
+  <Style x:Key="HttpMethodGetStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource HttpGetBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
+  </Style>
+  
+  <Style x:Key="HttpMethodPostStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource HttpPostBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
+  </Style>
+  
+  <Style x:Key="HttpMethodPutStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource HttpPutBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
+  </Style>
+  
+  <Style x:Key="HttpMethodPatchStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource HttpPatchBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
+  </Style>
+  
+  <Style x:Key="HttpMethodDeleteStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource HttpDeleteBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
+  </Style>
+  
+  <Style x:Key="HttpMethodHeadStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource HttpHeadBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
+  </Style>
+  
+  <Style x:Key="HttpMethodOptionsStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource HttpOptionsBrush}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyBold}" />
   </Style>
 
   <!-- Request Tab Style -->
@@ -132,6 +188,7 @@
     <Setter Property="Padding" Value="16,12" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyMedium}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Button">
@@ -197,6 +254,7 @@
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="12,10" />
     <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontFamily" Value="{StaticResource MonospaceFontFamily}" />
     <Setter Property="PlaceholderForeground" Value="{StaticResource TextSubtleBrush}" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
