@@ -5,6 +5,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using DevFlow.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 
 namespace DevFlow.Presentation;
 
@@ -12,18 +14,25 @@ public partial record MainModel
 {
     private readonly INavigator _navigator;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly DispatcherQueue? _dispatcherQueue;
+    private readonly ILogger<MainModel>? _logger;
 
     public MainModel(
         IStringLocalizer localizer,
         IOptions<AppConfig> appInfo,
         INavigator navigator,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ILogger<MainModel>? logger = null)
     {
         _navigator = navigator;
         _httpClientFactory = httpClientFactory;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+        _logger = logger;
         Title = "DevFlow";
         Title += $" - {localizer["ApplicationName"]}";
         Title += $" - {appInfo?.Value?.Environment}";
+        
+        _logger?.LogInformation("MainModel initialized, DispatcherQueue captured: {HasDispatcher}", _dispatcherQueue != null);
     }
 
     public string? Title { get; }
@@ -109,10 +118,12 @@ public partial record MainModel
     }
 
     public IState<string> ResponseStatus => State<string>.Value(this, () => "Awaiting request");
-    public IState<string> ResponseMeta => State<string>.Value(this, () => string.Empty);
+    public IState<string> ResponseTime => State<string>.Value(this, () => "0 ms");
+    public IState<string> ResponseSize => State<string>.Value(this, () => "0 KB");
     public IState<string> ResponseBody => State<string>.Value(this, () => string.Empty);
     public IState<string> ErrorMessage => State<string>.Value(this, () => string.Empty);
     public IState<bool> IsSending => State<bool>.Value(this, () => false);
+    public ObservableCollection<ResponseHeaderItem> ResponseHeaders { get; } = new();
 
     public async ValueTask SendRequest(CancellationToken ct)
     {
@@ -159,15 +170,65 @@ public partial record MainModel
             var responseText = await response.Content.ReadAsStringAsync(ct);
 
             await ResponseStatus.UpdateAsync(_ => $"{(int)response.StatusCode} {response.ReasonPhrase}", ct);
-            await ResponseMeta.UpdateAsync(_ => $"Time: {stopwatch.ElapsedMilliseconds} ms    Size: {(responseBytes.Length / 1024d):0.00} KB", ct);
+            await ResponseTime.UpdateAsync(_ => $"{stopwatch.ElapsedMilliseconds} ms", ct);
+            await ResponseSize.UpdateAsync(_ => $"{(responseBytes.Length / 1024d):0.00} KB", ct);
             await ResponseBody.UpdateAsync(_ => responseText, ct);
+            
+            // Populate response headers on UI thread
+            var headersList = new List<ResponseHeaderItem>();
+            foreach (var header in response.Headers)
+            {
+                headersList.Add(new ResponseHeaderItem(header.Key, string.Join(", ", header.Value)));
+            }
+            foreach (var header in response.Content.Headers)
+            {
+                headersList.Add(new ResponseHeaderItem(header.Key, string.Join(", ", header.Value)));
+            }
+            
+            _logger?.LogInformation("Collected {Count} response headers", headersList.Count);
+            foreach (var h in headersList)
+            {
+                _logger?.LogInformation("  Header: {Key} = {Value}", h.Key, h.Value);
+            }
+            
+            // Get dispatcher from main window since model might be created on background thread
+            var dispatcher = _dispatcherQueue ?? (Microsoft.UI.Xaml.Application.Current as App)?.MainWindow?.DispatcherQueue;
+            _logger?.LogInformation("DispatcherQueue available: {Available}, using Window dispatcher: {UsingWindow}", 
+                _dispatcherQueue != null, dispatcher != _dispatcherQueue);
+            
+            if (dispatcher != null)
+            {
+                var enqueued = dispatcher.TryEnqueue(() =>
+                {
+                    _logger?.LogInformation("Dispatcher callback executing, adding {Count} headers to collection", headersList.Count);
+                    ResponseHeaders.Clear();
+                    foreach (var h in headersList)
+                    {
+                        ResponseHeaders.Add(h);
+                    }
+                    _logger?.LogInformation("ResponseHeaders collection now has {Count} items", ResponseHeaders.Count);
+                });
+                _logger?.LogInformation("TryEnqueue result: {Result}", enqueued);
+            }
+            else
+            {
+                _logger?.LogWarning("No dispatcher available, updating headers directly");
+                ResponseHeaders.Clear();
+                foreach (var h in headersList)
+                {
+                    ResponseHeaders.Add(h);
+                }
+            }
         }
         catch (Exception ex)
         {
             await ErrorMessage.UpdateAsync(_ => ex.Message, ct);
             await ResponseStatus.UpdateAsync(_ => "Request failed", ct);
-            await ResponseMeta.UpdateAsync(_ => string.Empty, ct);
+            await ResponseTime.UpdateAsync(_ => "0 ms", ct);
+            await ResponseSize.UpdateAsync(_ => "0 KB", ct);
             await ResponseBody.UpdateAsync(_ => string.Empty, ct);
+            var dispatcher = _dispatcherQueue ?? (Microsoft.UI.Xaml.Application.Current as App)?.MainWindow?.DispatcherQueue;
+            dispatcher?.TryEnqueue(() => ResponseHeaders.Clear());
         }
         finally
         {
@@ -178,9 +239,12 @@ public partial record MainModel
     public async ValueTask ResetResponse(CancellationToken ct)
     {
         await ResponseStatus.UpdateAsync(_ => "Awaiting request", ct);
-        await ResponseMeta.UpdateAsync(_ => string.Empty, ct);
+        await ResponseTime.UpdateAsync(_ => "0 ms", ct);
+        await ResponseSize.UpdateAsync(_ => "0 KB", ct);
         await ResponseBody.UpdateAsync(_ => string.Empty, ct);
         await ErrorMessage.UpdateAsync(_ => string.Empty, ct);
+        var dispatcher = _dispatcherQueue ?? (Microsoft.UI.Xaml.Application.Current as App)?.MainWindow?.DispatcherQueue;
+        dispatcher?.TryEnqueue(() => ResponseHeaders.Clear());
     }
 
     private static Uri BuildUri(string urlInput, string queryText)

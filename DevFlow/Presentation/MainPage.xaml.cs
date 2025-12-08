@@ -8,8 +8,13 @@ namespace DevFlow.Presentation;
 public sealed partial class MainPage : Page
 {
     private int _currentTabIndex = 0;
+    private int _currentResponseTabIndex = 0;
+    private bool _wrapLines = false;
+    private string _filterText = string.Empty;
     private readonly Button[] _tabButtons;
     private readonly FrameworkElement[] _tabPanels;
+    private Button[] _responseTabButtons = null!;
+    private FrameworkElement[] _responseTabPanels = null!;
 
     public MainPage()
     {
@@ -23,8 +28,13 @@ public sealed partial class MainPage : Page
 
     private void MainPage_Loaded(object sender, RoutedEventArgs e)
     {
+        // Initialize response tab arrays
+        _responseTabButtons = new Button[] { ResponseTabJson, ResponseTabRaw, ResponseTabHeaders, ResponseTabTestResults };
+        _responseTabPanels = new FrameworkElement[] { ResponseJsonPanel, ResponseRawPanel, ResponseHeadersPanel, ResponseTestResultsPanel };
+        
         UpdateLineNumbers();
         UpdateResponseLineNumbers();
+        UpdateRawLineNumbers();
         
         // Register for text binding updates
         if (BodyTextBox != null)
@@ -40,6 +50,7 @@ public sealed partial class MainPage : Page
             ResponseBodyText.RegisterPropertyChangedCallback(TextBlock.TextProperty, (s, dp) =>
             {
                 UpdateResponseLineNumbers();
+                UpdateRawLineNumbers();
             });
         }
     }
@@ -268,4 +279,233 @@ public sealed partial class MainPage : Page
             sender.Text = selectedHeader;
         }
     }
+
+    #region Response Section Handlers
+
+    private void UpdateRawLineNumbers()
+    {
+        var text = ResponseBodyText?.Text ?? string.Empty;
+        var lineCount = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+        
+        if (RawLineNumbersControl != null)
+        {
+            var lineNumbers = new List<string>();
+            for (int i = 1; i <= lineCount; i++)
+            {
+                lineNumbers.Add(i.ToString());
+            }
+            RawLineNumbersControl.ItemsSource = lineNumbers;
+        }
+    }
+
+    private void ResponseTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string tagStr && int.TryParse(tagStr, out int tabIndex))
+        {
+            SwitchToResponseTab(tabIndex);
+        }
+    }
+
+    private void SwitchToResponseTab(int tabIndex)
+    {
+        System.Diagnostics.Debug.WriteLine($"SwitchToResponseTab called with index: {tabIndex}, current: {_currentResponseTabIndex}");
+        
+        if (tabIndex == _currentResponseTabIndex || _responseTabButtons == null) return;
+        
+        for (int i = 0; i < _responseTabButtons.Length; i++)
+        {
+            _responseTabButtons[i].Style = i == tabIndex 
+                ? (Style)Resources["RequestTabActiveStyle"] ?? (Style)Application.Current.Resources["RequestTabActiveStyle"]
+                : (Style)Resources["RequestTabStyle"] ?? (Style)Application.Current.Resources["RequestTabStyle"];
+            
+            _responseTabPanels[i].Visibility = i == tabIndex ? Visibility.Visible : Visibility.Collapsed;
+            System.Diagnostics.Debug.WriteLine($"  Panel {i}: Visibility = {_responseTabPanels[i].Visibility}");
+        }
+        
+        _currentResponseTabIndex = tabIndex;
+        
+        // Debug: Check ResponseHeaders binding
+        if (tabIndex == 2 && ResponseHeadersControl != null)
+        {
+            System.Diagnostics.Debug.WriteLine($"  ResponseHeadersControl.ItemsSource has {(ResponseHeadersControl.ItemsSource as System.Collections.ICollection)?.Count ?? 0} items");
+        }
+    }
+
+    private void ResponseContent_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    {
+        // Sync line numbers scroll with content scroll
+        if (sender is ScrollViewer contentScroller && LineNumbersScroller != null)
+        {
+            LineNumbersScroller.ChangeView(null, contentScroller.VerticalOffset, null, true);
+        }
+    }
+
+    private void RawContent_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    {
+        // Sync line numbers scroll with content scroll
+        if (sender is ScrollViewer contentScroller && RawLineNumbersScroller != null)
+        {
+            RawLineNumbersScroller.ChangeView(null, contentScroller.VerticalOffset, null, true);
+        }
+    }
+
+    private void ResponseFilter_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox filterBox)
+        {
+            _filterText = filterBox.Text ?? string.Empty;
+            ApplyResponseFilter();
+        }
+    }
+
+    private void ApplyResponseFilter()
+    {
+        var text = ResponseBodyText?.Text ?? string.Empty;
+        
+        if (string.IsNullOrEmpty(_filterText))
+        {
+            // Show all content
+            if (ResponseHighlightBlock != null)
+            {
+                JsonSyntaxHighlighter.ApplyHighlighting(ResponseHighlightBlock, text);
+            }
+            if (ResponseRawText != null)
+            {
+                ResponseRawText.Text = text;
+            }
+        }
+        else
+        {
+            // Filter lines containing the search text
+            var lines = text.Split('\n');
+            var filteredLines = lines.Where(l => l.Contains(_filterText, StringComparison.OrdinalIgnoreCase));
+            var filteredText = string.Join("\n", filteredLines);
+            
+            if (ResponseHighlightBlock != null)
+            {
+                JsonSyntaxHighlighter.ApplyHighlighting(ResponseHighlightBlock, filteredText);
+            }
+            if (ResponseRawText != null)
+            {
+                ResponseRawText.Text = filteredText;
+            }
+            
+            // Update line numbers for filtered content
+            var lineCount = string.IsNullOrEmpty(filteredText) ? 1 : filteredText.Split('\n').Length;
+            var lineNumbers = new List<string>();
+            for (int i = 1; i <= lineCount; i++)
+            {
+                lineNumbers.Add(i.ToString());
+            }
+            if (ResponseLineNumbersControl != null)
+            {
+                ResponseLineNumbersControl.ItemsSource = lineNumbers;
+            }
+            if (RawLineNumbersControl != null)
+            {
+                RawLineNumbersControl.ItemsSource = lineNumbers;
+            }
+        }
+    }
+
+    private void WrapLines_Click(object sender, RoutedEventArgs e)
+    {
+        _wrapLines = !_wrapLines;
+        
+        var wrapping = _wrapLines ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        var scrollMode = _wrapLines ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
+        
+        // Update JSON view
+        if (ResponseHighlightBlock != null)
+        {
+            ResponseHighlightBlock.TextWrapping = wrapping;
+        }
+        if (ResponseContentScroller != null)
+        {
+            ResponseContentScroller.HorizontalScrollBarVisibility = scrollMode;
+        }
+        
+        // Update Raw view
+        if (ResponseRawText != null)
+        {
+            ResponseRawText.TextWrapping = wrapping;
+        }
+        if (RawContentScroller != null)
+        {
+            RawContentScroller.HorizontalScrollBarVisibility = scrollMode;
+        }
+        
+        // Update icon color to indicate active state
+        if (WrapIcon != null)
+        {
+            WrapIcon.Foreground = _wrapLines 
+                ? (Brush)Application.Current.Resources["AccentPrimaryBrush"] 
+                : (Brush)Application.Current.Resources["TextMutedBrush"];
+        }
+    }
+
+    private async void CopyResponse_Click(object sender, RoutedEventArgs e)
+    {
+        var text = ResponseBodyText?.Text ?? string.Empty;
+        if (!string.IsNullOrEmpty(text))
+        {
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            
+            // Show feedback - change icon to checkmark temporarily
+            if (CopyResponseIcon != null)
+            {
+                var originalGlyph = CopyResponseIcon.Glyph;
+                var originalForeground = CopyResponseIcon.Foreground;
+                
+                CopyResponseIcon.Glyph = "\uE73E"; // Checkmark
+                CopyResponseIcon.Foreground = (Brush)Application.Current.Resources["SuccessBrush"];
+                
+                await Task.Delay(1500);
+                
+                CopyResponseIcon.Glyph = originalGlyph;
+                CopyResponseIcon.Foreground = originalForeground;
+            }
+        }
+    }
+
+    private async void DownloadResponse_Click(object sender, RoutedEventArgs e)
+    {
+        var text = ResponseBodyText?.Text ?? string.Empty;
+        if (string.IsNullOrEmpty(text)) return;
+
+        try
+        {
+            // Use file picker for saving
+            var savePicker = new Windows.Storage.Pickers.FileSavePicker();
+            savePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Downloads;
+            savePicker.FileTypeChoices.Add("JSON", new List<string> { ".json" });
+            savePicker.FileTypeChoices.Add("Text", new List<string> { ".txt" });
+            savePicker.SuggestedFileName = $"response_{DateTime.Now:yyyyMMdd_HHmmss}";
+
+            // Initialize with window handle
+            var window = (Application.Current as App)?.MainWindow;
+            if (window != null)
+            {
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hwnd);
+            }
+
+            var file = await savePicker.PickSaveFileAsync();
+            if (file != null)
+            {
+                await Windows.Storage.FileIO.WriteTextAsync(file, text);
+            }
+        }
+        catch
+        {
+            // Fallback: copy to clipboard
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
+    }
+
+    #endregion
 }

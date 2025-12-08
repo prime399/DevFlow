@@ -76,6 +76,20 @@ public class RequestHeader : INotifyPropertyChanged
     }
 }
 
+public class ResponseHeaderItem
+{
+    public string Key { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    
+    public ResponseHeaderItem() { }
+    
+    public ResponseHeaderItem(string key, string value)
+    {
+        Key = key;
+        Value = value;
+    }
+}
+
 public static class CommonHeaderKeys
 {
     public static readonly IReadOnlyList<string> All = new[]
