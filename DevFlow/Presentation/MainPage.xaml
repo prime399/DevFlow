@@ -614,7 +614,8 @@
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontFamily="{StaticResource MonospaceFontFamily}"
                                FontSize="12"
-                               TextWrapping="NoWrap" />
+                               TextWrapping="NoWrap"
+                               IsTextSelectionEnabled="True" />
                   </ScrollViewer>
                 </Grid>
               </Border>

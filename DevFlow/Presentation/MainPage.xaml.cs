@@ -25,19 +25,22 @@ public sealed partial class MainPage : Page
         UpdateLineNumbers();
         UpdateResponseLineNumbers();
         
-        // Subscribe to DataContext changes for response updates
-        DataContextChanged += (s, args) =>
+        // Register for text binding updates
+        if (BodyTextBox != null)
         {
-            if (args.NewValue != null)
+            BodyTextBox.RegisterPropertyChangedCallback(TextBox.TextProperty, (s, dp) =>
             {
-                // Update response line numbers when response body changes
-                var bodyProp = args.NewValue.GetType().GetProperty("ResponseBody");
-                if (bodyProp != null)
-                {
-                    UpdateResponseLineNumbers();
-                }
-            }
-        };
+                UpdateLineNumbers();
+            });
+        }
+        
+        if (ResponseBodyText != null)
+        {
+            ResponseBodyText.RegisterPropertyChangedCallback(TextBlock.TextProperty, (s, dp) =>
+            {
+                UpdateResponseLineNumbers();
+            });
+        }
     }
 
     private ObservableCollection<RequestParameter>? GetParameters()
@@ -82,15 +85,14 @@ public sealed partial class MainPage : Page
     {
         var text = BodyTextBox?.Text ?? string.Empty;
         var lineCount = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
-        var lineNumbers = new List<string>();
-        
-        for (int i = 1; i <= lineCount; i++)
-        {
-            lineNumbers.Add(i.ToString());
-        }
         
         if (LineNumbersControl != null)
         {
+            var lineNumbers = new List<string>();
+            for (int i = 1; i <= lineCount; i++)
+            {
+                lineNumbers.Add(i.ToString());
+            }
             LineNumbersControl.ItemsSource = lineNumbers;
         }
     }
@@ -99,15 +101,14 @@ public sealed partial class MainPage : Page
     {
         var text = ResponseBodyText?.Text ?? string.Empty;
         var lineCount = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
-        var lineNumbers = new List<string>();
-        
-        for (int i = 1; i <= lineCount; i++)
-        {
-            lineNumbers.Add(i.ToString());
-        }
         
         if (ResponseLineNumbersControl != null)
         {
+            var lineNumbers = new List<string>();
+            for (int i = 1; i <= lineCount; i++)
+            {
+                lineNumbers.Add(i.ToString());
+            }
             ResponseLineNumbersControl.ItemsSource = lineNumbers;
         }
     }
