@@ -43,7 +43,11 @@ public partial record MainModel
     public IReadOnlyList<AuthTypeOption> AuthTypes { get; } = AuthTypeInfo.AllTypes;
     public IReadOnlyList<ApiKeyLocationOption> ApiKeyLocations { get; } = ApiKeyLocationInfo.AllLocations;
     
-    public AuthorizationConfig Authorization { get; } = new AuthorizationConfig();
+    // Request Tab Management
+    public RequestTabManager TabManager { get; } = new RequestTabManager();
+    
+    // Active tab's authorization (for convenience binding)
+    public AuthorizationConfig Authorization => TabManager.ActiveTab?.Authorization ?? new AuthorizationConfig();
 
     public IState<string> SelectedMethod => State<string>.Value(this, () => "GET");
     public IState<string> RequestUrl => State<string>.Value(this, () => "https://echo.hoppscotch.io");
@@ -53,15 +57,9 @@ public partial record MainModel
     public IState<bool> OverrideContentType => State<bool>.Value(this, () => false);
     public IState<int> SelectedTabIndex => State<int>.Value(this, () => 0);
 
-    public ObservableCollection<RequestParameter> Parameters { get; } = new()
-    {
-        new RequestParameter("", "", "", true)
-    };
-
-    public ObservableCollection<RequestHeader> Headers { get; } = new()
-    {
-        new RequestHeader("", "", "", true)
-    };
+    // These now reference the active tab's collections
+    public ObservableCollection<RequestParameter> Parameters => TabManager.ActiveTab?.Parameters ?? new ObservableCollection<RequestParameter>();
+    public ObservableCollection<RequestHeader> Headers => TabManager.ActiveTab?.Headers ?? new ObservableCollection<RequestHeader>();
 
     public void AddParameter()
     {

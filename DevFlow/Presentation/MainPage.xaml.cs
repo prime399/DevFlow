@@ -568,6 +568,203 @@ public sealed partial class MainPage : Page
 
     #endregion
 
+    #region Request Tab Handlers
+
+    private RequestTabManager? GetTabManager()
+    {
+        var dc = DataContext;
+        if (dc == null) return null;
+        
+        var prop = dc.GetType().GetProperty("TabManager");
+        return prop?.GetValue(dc) as RequestTabManager;
+    }
+
+    private void AddNewTab_Click(object sender, RoutedEventArgs e)
+    {
+        var tabManager = GetTabManager();
+        tabManager?.AddNewTab();
+        SyncActiveTabToUI();
+    }
+
+    private void HttpMethod_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is string method)
+        {
+            var tabManager = GetTabManager();
+            if (tabManager?.ActiveTab != null)
+            {
+                tabManager.ActiveTab.HttpMethod = method;
+            }
+        }
+    }
+
+    private void RequestTab_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is RequestTab tab)
+        {
+            var tabManager = GetTabManager();
+            if (tabManager != null)
+            {
+                tabManager.SetActiveTab(tab);
+                SyncActiveTabToUI();
+            }
+        }
+    }
+
+    private void CloseTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is RequestTab tab)
+        {
+            var tabManager = GetTabManager();
+            tabManager?.CloseTab(tab);
+            SyncActiveTabToUI();
+        }
+    }
+
+    private async void TabName_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is RequestTab tab)
+        {
+            await ShowRenameDialog(tab);
+        }
+    }
+
+    private async Task ShowRenameDialog(RequestTab tab)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Edit Request",
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = this.XamlRoot
+        };
+
+        var inputPanel = new StackPanel { Spacing = 12 };
+        
+        var labelText = new TextBlock
+        {
+            Text = "Label",
+            Foreground = (Brush)Application.Current.Resources["TextSecondaryBrush"],
+            FontFamily = (FontFamily)Application.Current.Resources["AppFontFamilyMedium"],
+            FontSize = 12
+        };
+        
+        var nameTextBox = new TextBox
+        {
+            Text = tab.Name,
+            PlaceholderText = "Untitled",
+            SelectionStart = 0,
+            SelectionLength = tab.Name.Length
+        };
+
+        inputPanel.Children.Add(labelText);
+        inputPanel.Children.Add(nameTextBox);
+        
+        dialog.Content = inputPanel;
+
+        var result = await dialog.ShowAsync();
+        
+        if (result == ContentDialogResult.Primary)
+        {
+            var newName = nameTextBox.Text?.Trim();
+            if (!string.IsNullOrWhiteSpace(newName))
+            {
+                var tabManager = GetTabManager();
+                tabManager?.RenameTab(tab, newName);
+            }
+        }
+    }
+
+    private void SyncActiveTabToUI()
+    {
+        var tabManager = GetTabManager();
+        var activeTab = tabManager?.ActiveTab;
+        
+        if (activeTab == null) return;
+        
+        // Sync method, URL, body to IState properties
+        // This bridges the tab data to the existing binding infrastructure
+        var dc = DataContext;
+        if (dc == null) return;
+        
+        // Update SelectedMethod state
+        var methodProp = dc.GetType().GetProperty("SelectedMethod");
+        if (methodProp?.GetValue(dc) is IState<string> methodState)
+        {
+            _ = methodState.UpdateAsync(_ => activeTab.HttpMethod, CancellationToken.None);
+        }
+        
+        // Update RequestUrl state
+        var urlProp = dc.GetType().GetProperty("RequestUrl");
+        if (urlProp?.GetValue(dc) is IState<string> urlState)
+        {
+            _ = urlState.UpdateAsync(_ => activeTab.Url, CancellationToken.None);
+        }
+        
+        // Update BodyText state
+        var bodyProp = dc.GetType().GetProperty("BodyText");
+        if (bodyProp?.GetValue(dc) is IState<string> bodyState)
+        {
+            _ = bodyState.UpdateAsync(_ => activeTab.BodyText, CancellationToken.None);
+        }
+        
+        // Update SelectedContentType state
+        var contentTypeProp = dc.GetType().GetProperty("SelectedContentType");
+        if (contentTypeProp?.GetValue(dc) is IState<ContentType> contentTypeState)
+        {
+            _ = contentTypeState.UpdateAsync(_ => activeTab.ContentType, CancellationToken.None);
+        }
+        
+        // Refresh bindings for Parameters and Headers (they now point to active tab's collections)
+        ParametersItemsControl?.GetBindingExpression(ItemsControl.ItemsSourceProperty)?.UpdateSource();
+        HeadersItemsControl?.GetBindingExpression(ItemsControl.ItemsSourceProperty)?.UpdateSource();
+    }
+
+    private void SyncUIToActiveTab()
+    {
+        var tabManager = GetTabManager();
+        var activeTab = tabManager?.ActiveTab;
+        
+        if (activeTab == null) return;
+        
+        var dc = DataContext;
+        if (dc == null) return;
+        
+        // Get current values from UI states and update active tab
+        var methodProp = dc.GetType().GetProperty("SelectedMethod");
+        if (methodProp?.GetValue(dc) is IState<string> methodState)
+        {
+            var method = methodState.GetType().GetMethod("GetValue")?.Invoke(methodState, null) as string;
+            if (!string.IsNullOrEmpty(method))
+            {
+                activeTab.HttpMethod = method;
+            }
+        }
+        
+        var urlProp = dc.GetType().GetProperty("RequestUrl");
+        if (urlProp?.GetValue(dc) is IState<string> urlState)
+        {
+            var url = urlState.GetType().GetMethod("GetValue")?.Invoke(urlState, null) as string;
+            if (url != null)
+            {
+                activeTab.Url = url;
+            }
+        }
+        
+        var bodyProp = dc.GetType().GetProperty("BodyText");
+        if (bodyProp?.GetValue(dc) is IState<string> bodyState)
+        {
+            var body = bodyState.GetType().GetMethod("GetValue")?.Invoke(bodyState, null) as string;
+            if (body != null)
+            {
+                activeTab.BodyText = body;
+            }
+        }
+    }
+
+    #endregion
+
     #region Authorization Handlers
 
     private AuthorizationConfig? GetAuthorizationConfig()

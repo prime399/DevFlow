@@ -8,6 +8,7 @@
 
   <Page.Resources>
     <converters:HttpMethodToBrushConverter x:Key="HttpMethodToBrushConverter" />
+    <converters:BoolToTabBackgroundConverter x:Key="BoolToTabBackgroundConverter" />
     <x:String x:Key="HeaderAccept">Accept</x:String>
     <x:String x:Key="HeaderAcceptCharset">Accept-Charset</x:String>
     <x:String x:Key="HeaderAcceptEncoding">Accept-Encoding</x:String>
@@ -74,9 +75,131 @@
       </NavigationView.MenuItems>
 
       <NavigationView.Content>
-        <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" x:Name="MainContentGrid">
-          <!-- Request URL Bar -->
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto" x:Name="MainContentGrid">
+          <!-- Request Tabs Bar -->
           <Border Grid.Row="0"
+                  Background="{StaticResource SurfaceVariantBrush}"
+                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                  BorderThickness="0,0,0,1"
+                  Padding="0">
+            <Grid ColumnDefinitions="*,Auto">
+              <!-- Tabs ScrollViewer -->
+              <ScrollViewer Grid.Column="0"
+                            HorizontalScrollBarVisibility="Auto"
+                            VerticalScrollBarVisibility="Disabled">
+                <StackPanel x:Name="RequestTabsPanel" Orientation="Horizontal">
+                  <ItemsControl x:Name="RequestTabsControl" ItemsSource="{Binding TabManager.Tabs}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border x:Name="TabBorder"
+                                Background="{Binding IsActive, Converter={StaticResource BoolToTabBackgroundConverter}}"
+                                BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                BorderThickness="0,0,1,0"
+                                Padding="0"
+                                MinWidth="120"
+                                MaxWidth="200"
+                                PointerPressed="RequestTab_PointerPressed">
+                          <Grid ColumnDefinitions="Auto,*,Auto" Height="36">
+                            <!-- HTTP Method Badge -->
+                            <Border Grid.Column="0"
+                                    CornerRadius="3"
+                                    Padding="6,2"
+                                    Margin="8,0,4,0"
+                                    VerticalAlignment="Center">
+                              <TextBlock Text="{Binding HttpMethod}"
+                                         FontFamily="{StaticResource AppFontFamilyBold}"
+                                         FontSize="10"
+                                         Foreground="{Binding HttpMethod, Converter={StaticResource HttpMethodToBrushConverter}}" />
+                            </Border>
+                            
+                            <!-- Tab Name (clickable for rename) -->
+                            <Button Grid.Column="1"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="4,2"
+                                    Margin="0"
+                                    MinWidth="0"
+                                    MinHeight="0"
+                                    CornerRadius="3"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Click="TabName_Click"
+                                    ToolTipService.ToolTip="Click to rename">
+                              <Button.Resources>
+                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#313244" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#3b3d4f" />
+                              </Button.Resources>
+                              <StackPanel Orientation="Horizontal" Spacing="3">
+                                <TextBlock Text="{Binding Name}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource AppFontFamily}"
+                                           FontSize="12"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxWidth="100"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="*"
+                                           Foreground="{StaticResource AccentPrimaryBrush}"
+                                           FontFamily="{StaticResource AppFontFamilyBold}"
+                                           FontSize="12"
+                                           Visibility="{Binding IsDirty}"
+                                           VerticalAlignment="Center" />
+                              </StackPanel>
+                            </Button>
+                            
+                            <!-- Close Button -->
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Padding="4"
+                                    Margin="0,0,4,0"
+                                    VerticalAlignment="Center"
+                                    Click="CloseTab_Click"
+                                    ToolTipService.ToolTip="Close tab">
+                              <FontIcon Glyph="&#xE8BB;" FontSize="10" Foreground="{StaticResource TextMutedBrush}" />
+                            </Button>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  
+                  <!-- Add New Tab Button (after tabs) -->
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          Click="AddNewTab_Click"
+                          Margin="4,0,8,0"
+                          Padding="8"
+                          VerticalAlignment="Center"
+                          ToolTipService.ToolTip="New request (Ctrl+T)">
+                    <FontIcon Glyph="{StaticResource IconGlyphAdd}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" />
+                  </Button>
+                </StackPanel>
+              </ScrollViewer>
+              
+              <!-- Right side controls -->
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="8,0">
+                <!-- Environment Selector -->
+                <Button Style="{StaticResource IconButtonStyle}"
+                        ToolTipService.ToolTip="Select environment">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE753;" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="Select environment"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                    <FontIcon Glyph="&#xE70D;" FontSize="10" Foreground="{StaticResource TextMutedBrush}" />
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </Grid>
+          </Border>
+          
+          <!-- Request URL Bar -->
+          <Border Grid.Row="1"
                   Background="{StaticResource RequestBarBackgroundBrush}"
                   BorderBrush="{StaticResource RequestBarBorderBrush}"
                   BorderThickness="0,0,0,1"
@@ -91,6 +214,7 @@
                       Padding="4,0">
                 <ComboBox ItemsSource="{Binding Methods}"
                           SelectedItem="{Binding SelectedMethod, Mode=TwoWay}"
+                          SelectionChanged="HttpMethod_SelectionChanged"
                           Style="{StaticResource MethodComboBoxStyle}"
                           x:Uid="MainPage.ComboBox.Method">
                   <ComboBox.ItemTemplate>
@@ -146,7 +270,7 @@
           </Border>
 
           <!-- Tab Navigation Bar -->
-          <Border Grid.Row="1"
+          <Border Grid.Row="2"
                   Background="{StaticResource TabBarBackgroundBrush}"
                   BorderBrush="{StaticResource RequestBarBorderBrush}"
                   BorderThickness="0,0,0,1">
@@ -210,7 +334,7 @@
           </Border>
 
           <!-- Content Area -->
-          <Grid Grid.Row="2" Background="{StaticResource TabBarBackgroundBrush}">
+          <Grid Grid.Row="3" Background="{StaticResource TabBarBackgroundBrush}">
             <!-- Parameters Tab Panel (Index 0) -->
             <ScrollViewer x:Name="ParametersPanel" Visibility="Visible">
               <Grid RowDefinitions="Auto,Auto,*" Padding="0">
@@ -1074,7 +1198,7 @@
           </Grid>
 
           <!-- Response Splitter -->
-          <Border Grid.Row="3"
+          <Border Grid.Row="4"
                   x:Name="ResponseSplitter"
                   Background="{StaticResource SurfaceVariantBrush}"
                   BorderBrush="{StaticResource RequestBarBorderBrush}"
@@ -1094,7 +1218,7 @@
           </Border>
 
           <!-- Response Section - Always visible at bottom -->
-          <Border Grid.Row="4"
+          <Border Grid.Row="5"
                   x:Name="ResponseSection"
                   Background="{StaticResource RequestBarBackgroundBrush}"
                   BorderBrush="{StaticResource RequestBarBorderBrush}"
