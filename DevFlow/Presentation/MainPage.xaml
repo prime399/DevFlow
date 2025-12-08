@@ -604,18 +604,23 @@
                     </ItemsControl>
                   </Border>
                   
-                  <!-- Response Content -->
+                  <!-- Response Content with Syntax Highlighting -->
                   <ScrollViewer Grid.Column="1"
                                 HorizontalScrollBarVisibility="Auto"
                                 VerticalScrollBarVisibility="Auto"
                                 Padding="12">
-                    <TextBlock x:Name="ResponseBodyText"
-                               Text="{Binding ResponseBody}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               FontFamily="{StaticResource MonospaceFontFamily}"
-                               FontSize="12"
-                               TextWrapping="NoWrap"
-                               IsTextSelectionEnabled="True" />
+                    <StackPanel>
+                      <!-- Syntax highlighted display -->
+                      <TextBlock x:Name="ResponseHighlightBlock"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 FontSize="12"
+                                 TextWrapping="NoWrap"
+                                 IsTextSelectionEnabled="True" />
+                      <!-- Hidden TextBlock for binding trigger -->
+                      <TextBlock x:Name="ResponseBodyText"
+                                 Text="{Binding ResponseBody}"
+                                 Visibility="Collapsed" />
+                    </StackPanel>
                   </ScrollViewer>
                 </Grid>
               </Border>

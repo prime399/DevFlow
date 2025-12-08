@@ -8,5 +8,6 @@
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <PackageVersion Include="Uno.Fonts.Fluent" Version="2.8.1" />
+    <PackageVersion Include="ColorCode.Core" Version="2.0.15" />
   </ItemGroup>
 </Project>

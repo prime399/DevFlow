@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
+using DevFlow.Helpers;
 using DevFlow.Models;
 
 namespace DevFlow.Presentation;
@@ -110,6 +111,20 @@ public sealed partial class MainPage : Page
                 lineNumbers.Add(i.ToString());
             }
             ResponseLineNumbersControl.ItemsSource = lineNumbers;
+        }
+        
+        // Apply syntax highlighting to response
+        if (ResponseHighlightBlock != null)
+        {
+            try
+            {
+                JsonSyntaxHighlighter.ApplyHighlighting(ResponseHighlightBlock, text);
+            }
+            catch
+            {
+                // Fallback to plain text
+                ResponseHighlightBlock.Text = text;
+            }
         }
     }
 
