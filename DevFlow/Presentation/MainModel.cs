@@ -40,6 +40,10 @@ public partial record MainModel
     public IReadOnlyList<string> Methods { get; } = new[] { "GET", "POST", "PUT", "PATCH", "DELETE" };
     public IReadOnlyList<ContentType> ContentTypes { get; } = Models.ContentTypes.All;
     public IReadOnlyList<string> CommonHeaders { get; } = CommonHeaderKeys.All;
+    public IReadOnlyList<AuthTypeOption> AuthTypes { get; } = AuthTypeInfo.AllTypes;
+    public IReadOnlyList<ApiKeyLocationOption> ApiKeyLocations { get; } = ApiKeyLocationInfo.AllLocations;
+    
+    public AuthorizationConfig Authorization { get; } = new AuthorizationConfig();
 
     public IState<string> SelectedMethod => State<string>.Value(this, () => "GET");
     public IState<string> RequestUrl => State<string>.Value(this, () => "https://echo.hoppscotch.io");
@@ -149,11 +153,14 @@ public partial record MainModel
 
         try
         {
-            var requestUri = BuildUri(urlInput, queryText);
+            var requestUri = BuildUri(urlInput, queryText, Authorization);
             using var request = new HttpRequestMessage(new HttpMethod(methodName), requestUri);
             
             // Add headers from the Headers collection
             AddHeadersFromCollection(request);
+            
+            // Add authorization header if enabled
+            ApplyAuthorization(request);
 
             if (AllowsBody(methodName) && !string.IsNullOrWhiteSpace(bodyText))
             {
@@ -247,10 +254,20 @@ public partial record MainModel
         dispatcher?.TryEnqueue(() => ResponseHeaders.Clear());
     }
 
-    private static Uri BuildUri(string urlInput, string queryText)
+    private static Uri BuildUri(string urlInput, string queryText, AuthorizationConfig? auth = null)
     {
         var builder = new UriBuilder(urlInput);
         var incomingQuery = BuildQueryString(queryText);
+        
+        // Add API key as query param if configured
+        if (auth?.GetApiKeyQueryParam() is var apiKey && apiKey.HasValue)
+        {
+            var apiKeyParam = $"{Uri.EscapeDataString(apiKey.Value.Name)}={Uri.EscapeDataString(apiKey.Value.Value)}";
+            incomingQuery = string.IsNullOrWhiteSpace(incomingQuery) 
+                ? apiKeyParam 
+                : $"{incomingQuery}&{apiKeyParam}";
+        }
+        
         if (!string.IsNullOrWhiteSpace(incomingQuery))
         {
             var existing = builder.Query.TrimStart('?');
@@ -260,6 +277,26 @@ public partial record MainModel
         }
 
         return builder.Uri;
+    }
+    
+    private void ApplyAuthorization(HttpRequestMessage request)
+    {
+        if (Authorization == null || !Authorization.IsEnabled || Authorization.AuthType == AuthorizationType.None)
+            return;
+
+        var authHeader = Authorization.GenerateAuthorizationHeader();
+        if (!string.IsNullOrEmpty(authHeader))
+        {
+            // API Key with header location uses custom header name
+            if (Authorization.AuthType == AuthorizationType.ApiKey && Authorization.ApiKeyLocation == ApiKeyLocation.Header)
+            {
+                request.Headers.TryAddWithoutValidation(Authorization.ApiKeyName, Authorization.ApiKeyValue);
+            }
+            else
+            {
+                request.Headers.TryAddWithoutValidation("Authorization", authHeader);
+            }
+        }
     }
 
     private static string BuildQueryString(string queryText)

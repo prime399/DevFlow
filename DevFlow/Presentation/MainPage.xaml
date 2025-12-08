@@ -706,14 +706,351 @@
             </ScrollViewer>
 
             <!-- Authorization Tab Panel (Index 3) -->
-            <Grid x:Name="AuthPanel" Visibility="Collapsed">
-              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
-                <TextBlock Text="Authorization configuration coming soon..."
-                           Foreground="{StaticResource TextMutedBrush}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           FontSize="14" />
-              </Border>
-            </Grid>
+            <ScrollViewer x:Name="AuthPanel" Visibility="Collapsed">
+              <Grid RowDefinitions="Auto,*" Background="{StaticResource RequestBarBackgroundBrush}">
+                <!-- Auth Header Bar -->
+                <Border Grid.Row="0"
+                        Background="{StaticResource RequestBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,12">
+                  <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                    <!-- Auth Type Label -->
+                    <TextBlock Text="Authorization Type"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontFamily="{StaticResource AppFontFamilyMedium}"
+                               FontSize="13"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0" />
+                    
+                    <!-- Auth Type Dropdown -->
+                    <ComboBox Grid.Column="1"
+                              x:Name="AuthTypeComboBox"
+                              ItemsSource="{Binding AuthTypes}"
+                              SelectedIndex="0"
+                              SelectionChanged="AuthType_SelectionChanged"
+                              MinWidth="160"
+                              Background="{StaticResource MethodSelectorBgBrush}"
+                              BorderThickness="1"
+                              BorderBrush="{StaticResource RequestBarBorderBrush}"
+                              Padding="12,8">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding Name}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="13" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    
+                    <!-- Right side controls -->
+                    <StackPanel Grid.Column="3"
+                                Orientation="Horizontal"
+                                Spacing="12"
+                                VerticalAlignment="Center">
+                      <CheckBox x:Name="AuthEnabledCheckbox"
+                                IsChecked="{Binding Authorization.IsEnabled, Mode=TwoWay}"
+                                MinWidth="0"
+                                VerticalAlignment="Center" />
+                      <TextBlock Text="Enabled"
+                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="13"
+                                 VerticalAlignment="Center" />
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              ToolTipService.ToolTip="Help">
+                        <FontIcon Glyph="&#xE897;" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              ToolTipService.ToolTip="Clear authorization"
+                              Click="ClearAuth_Click">
+                        <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+                
+                <!-- Auth Configuration Content -->
+                <Grid Grid.Row="1" ColumnDefinitions="220,*" MinHeight="300">
+                  <!-- Left Panel - Auth Type List -->
+                  <Border Grid.Column="0"
+                          Background="{StaticResource SurfaceVariantBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,1,0">
+                    <ItemsControl ItemsSource="{Binding AuthTypes}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border x:Name="AuthTypeItemBorder"
+                                  Background="Transparent"
+                                  Padding="16,12"
+                                  PointerPressed="AuthTypeItem_PointerPressed">
+                            <Grid ColumnDefinitions="Auto,*">
+                              <RadioButton x:Name="AuthTypeRadio"
+                                           GroupName="AuthType"
+                                           MinWidth="0"
+                                           VerticalAlignment="Center"
+                                           Checked="AuthTypeRadio_Checked"
+                                           Tag="{Binding Type}" />
+                              <TextBlock Grid.Column="1"
+                                         Text="{Binding Name}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="13"
+                                         VerticalAlignment="Center"
+                                         Margin="8,0,0,0" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                  
+                  <!-- Right Panel - Auth Configuration Forms -->
+                  <Grid Grid.Column="1" Padding="24,20">
+                    <!-- None Auth Panel -->
+                    <StackPanel x:Name="AuthNonePanel" Visibility="Visible" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <FontIcon Glyph="&#xE72E;" FontSize="48" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,16" HorizontalAlignment="Center" />
+                      <TextBlock Text="This request does not use any authorization"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamily}"
+                                 FontSize="14"
+                                 HorizontalAlignment="Center" />
+                      <HyperlinkButton Content="Documentation"
+                                       Margin="0,8,0,0"
+                                       HorizontalAlignment="Center">
+                        <HyperlinkButton.ContentTemplate>
+                          <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                              <TextBlock Text="Documentation"
+                                         Foreground="{StaticResource AccentPrimaryBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="13" />
+                              <FontIcon Glyph="&#xE8A7;" FontSize="12" Foreground="{StaticResource AccentPrimaryBrush}" />
+                            </StackPanel>
+                          </DataTemplate>
+                        </HyperlinkButton.ContentTemplate>
+                      </HyperlinkButton>
+                    </StackPanel>
+                    
+                    <!-- Basic Auth Panel -->
+                    <StackPanel x:Name="AuthBasicPanel" Visibility="Collapsed" Spacing="20" MaxWidth="500">
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Username"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <TextBox x:Name="BasicAuthUsername"
+                                 Text="{Binding Authorization.Username, Mode=TwoWay}"
+                                 PlaceholderText="Enter username"
+                                 Background="{StaticResource InputBackgroundBrush}"
+                                 BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 Padding="12,10"
+                                 ToolTipService.ToolTip="Username for Basic Authentication" />
+                      </StackPanel>
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Password"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <PasswordBox x:Name="BasicAuthPassword"
+                                     Password="{Binding Authorization.Password, Mode=TwoWay}"
+                                     PlaceholderText="Enter password"
+                                     Background="{StaticResource InputBackgroundBrush}"
+                                     BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource MonospaceFontFamily}"
+                                     Padding="12,10"
+                                     ToolTipService.ToolTip="Password for Basic Authentication" />
+                      </StackPanel>
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="6"
+                              Padding="12"
+                              Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
+                          <TextBlock Text="The authorization header will be automatically generated when you send the request."
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                    
+                    <!-- Bearer Token Panel -->
+                    <StackPanel x:Name="AuthBearerPanel" Visibility="Collapsed" Spacing="20" MaxWidth="600">
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Token"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <TextBox x:Name="BearerTokenInput"
+                                 Text="{Binding Authorization.BearerToken, Mode=TwoWay}"
+                                 PlaceholderText="Enter bearer token"
+                                 Background="{StaticResource InputBackgroundBrush}"
+                                 BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 Padding="12,10"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="80"
+                                 ToolTipService.ToolTip="JWT or OAuth token for Bearer authentication" />
+                      </StackPanel>
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="6"
+                              Padding="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
+                          <TextBlock Text="The token will be sent in the Authorization header as 'Bearer &lt;token&gt;'."
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                    
+                    <!-- API Key Panel -->
+                    <StackPanel x:Name="AuthApiKeyPanel" Visibility="Collapsed" Spacing="20" MaxWidth="500">
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Key"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <TextBox x:Name="ApiKeyName"
+                                 Text="{Binding Authorization.ApiKeyName, Mode=TwoWay}"
+                                 PlaceholderText="e.g., X-API-Key, api_key"
+                                 Background="{StaticResource InputBackgroundBrush}"
+                                 BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 Padding="12,10"
+                                 ToolTipService.ToolTip="The name/key for your API key" />
+                      </StackPanel>
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Value"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <PasswordBox x:Name="ApiKeyValue"
+                                     Password="{Binding Authorization.ApiKeyValue, Mode=TwoWay}"
+                                     PlaceholderText="Enter API key value"
+                                     Background="{StaticResource InputBackgroundBrush}"
+                                     BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource MonospaceFontFamily}"
+                                     Padding="12,10"
+                                     ToolTipService.ToolTip="Your secret API key value" />
+                      </StackPanel>
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Add to"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <ComboBox x:Name="ApiKeyLocationComboBox"
+                                  ItemsSource="{Binding ApiKeyLocations}"
+                                  SelectedIndex="0"
+                                  SelectionChanged="ApiKeyLocation_SelectionChanged"
+                                  MinWidth="160"
+                                  Background="{StaticResource MethodSelectorBgBrush}"
+                                  BorderThickness="1"
+                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                  Padding="12,8"
+                                  ToolTipService.ToolTip="Where to include the API key">
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                              <TextBlock Text="{Binding Name}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="13" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+                      </StackPanel>
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="6"
+                              Padding="12"
+                              Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
+                          <TextBlock Text="API key can be sent as a header or query parameter."
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                    
+                    <!-- OAuth 2.0 Panel -->
+                    <ScrollViewer x:Name="AuthOAuth2Panel" Visibility="Collapsed">
+                      <StackPanel Spacing="20" MaxWidth="500">
+                        <StackPanel Spacing="8">
+                          <TextBlock Text="Access Token"
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamilyMedium}"
+                                     FontSize="12" />
+                          <TextBox x:Name="OAuth2AccessToken"
+                                   Text="{Binding Authorization.AccessToken, Mode=TwoWay}"
+                                   PlaceholderText="Enter access token"
+                                   Background="{StaticResource InputBackgroundBrush}"
+                                   BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonospaceFontFamily}"
+                                   Padding="12,10"
+                                   AcceptsReturn="True"
+                                   TextWrapping="Wrap"
+                                   MinHeight="60"
+                                   ToolTipService.ToolTip="Your OAuth 2.0 access token" />
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                          <TextBlock Text="Token Type"
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamilyMedium}"
+                                     FontSize="12" />
+                          <TextBox x:Name="OAuth2TokenType"
+                                   Text="{Binding Authorization.TokenType, Mode=TwoWay}"
+                                   PlaceholderText="Bearer"
+                                   Background="{StaticResource InputBackgroundBrush}"
+                                   BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonospaceFontFamily}"
+                                   Padding="12,10"
+                                   ToolTipService.ToolTip="Token type (usually Bearer)" />
+                        </StackPanel>
+                        <Border Background="{StaticResource SurfaceVariantBrush}"
+                                CornerRadius="6"
+                                Padding="12">
+                          <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                              <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
+                              <TextBlock Text="Enter your existing OAuth 2.0 access token."
+                                         Foreground="{StaticResource TextSecondaryBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="12"
+                                         TextWrapping="Wrap" />
+                            </StackPanel>
+                            <HyperlinkButton Margin="22,4,0,0">
+                              <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock Text="Learn how"
+                                           Foreground="{StaticResource AccentPrimaryBrush}"
+                                           FontFamily="{StaticResource AppFontFamily}"
+                                           FontSize="12" />
+                                <FontIcon Glyph="&#xE8A7;" FontSize="11" Foreground="{StaticResource AccentPrimaryBrush}" />
+                              </StackPanel>
+                            </HyperlinkButton>
+                          </StackPanel>
+                        </Border>
+                      </StackPanel>
+                    </ScrollViewer>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </ScrollViewer>
 
             <!-- Pre-request Script Tab Panel (Index 4) -->
             <Grid x:Name="PreScriptPanel" Visibility="Collapsed">

@@ -3,6 +3,8 @@ using System.Text.Json;
 using DevFlow.Helpers;
 using DevFlow.Models;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 
 namespace DevFlow.Presentation;
 
@@ -19,6 +21,7 @@ public sealed partial class MainPage : Page
     private readonly FrameworkElement[] _tabPanels;
     private Button[] _responseTabButtons = null!;
     private FrameworkElement[] _responseTabPanels = null!;
+    private FrameworkElement[] _authPanels = null!;
 
     public MainPage()
     {
@@ -36,9 +39,15 @@ public sealed partial class MainPage : Page
         _responseTabButtons = new Button[] { ResponseTabJson, ResponseTabRaw, ResponseTabHeaders, ResponseTabTestResults };
         _responseTabPanels = new FrameworkElement[] { ResponseJsonPanel, ResponseRawPanel, ResponseHeadersPanel, ResponseTestResultsPanel };
         
+        // Initialize auth panels array
+        _authPanels = new FrameworkElement[] { AuthNonePanel, AuthBasicPanel, AuthBearerPanel, AuthApiKeyPanel, AuthOAuth2Panel };
+        
         UpdateLineNumbers();
         UpdateResponseLineNumbers();
         UpdateRawLineNumbers();
+        
+        // Initialize first radio button as checked
+        InitializeAuthTypeRadioButtons();
         
         // Register for text binding updates
         if (BodyTextBox != null)
@@ -555,6 +564,174 @@ public sealed partial class MainPage : Page
     private void ResponseSplitter_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
     {
         _isResizing = false;
+    }
+
+    #endregion
+
+    #region Authorization Handlers
+
+    private AuthorizationConfig? GetAuthorizationConfig()
+    {
+        var dc = DataContext;
+        if (dc == null) return null;
+        
+        var prop = dc.GetType().GetProperty("Authorization");
+        return prop?.GetValue(dc) as AuthorizationConfig;
+    }
+
+    private void InitializeAuthTypeRadioButtons()
+    {
+        // Find and check the first radio button
+        if (AuthPanel?.Content is Grid authGrid)
+        {
+            var itemsControl = FindDescendant<ItemsControl>(authGrid);
+            if (itemsControl?.ItemsSource is System.Collections.IEnumerable items)
+            {
+                var firstContainer = itemsControl.ContainerFromIndex(0);
+                if (firstContainer != null)
+                {
+                    var radio = FindDescendant<RadioButton>(firstContainer as DependencyObject);
+                    if (radio != null)
+                    {
+                        radio.IsChecked = true;
+                    }
+                }
+            }
+        }
+    }
+
+    private T? FindDescendant<T>(DependencyObject? parent) where T : class
+    {
+        if (parent == null) return default;
+        
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T result)
+                return result;
+            
+            var descendant = FindDescendant<T>(child);
+            if (descendant != null)
+                return descendant;
+        }
+        return default;
+    }
+
+    private void AuthType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is AuthTypeOption selectedType)
+        {
+            var auth = GetAuthorizationConfig();
+            if (auth != null)
+            {
+                auth.AuthType = selectedType.Type;
+            }
+            SwitchToAuthPanel(selectedType.Type);
+            UpdateAuthTypeRadioButtons(selectedType.Type);
+        }
+    }
+
+    private void AuthTypeRadio_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton radio && radio.Tag is AuthorizationType authType)
+        {
+            var auth = GetAuthorizationConfig();
+            if (auth != null)
+            {
+                auth.AuthType = authType;
+            }
+            SwitchToAuthPanel(authType);
+            UpdateAuthTypeComboBox(authType);
+        }
+    }
+
+    private void AuthTypeItem_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border border)
+        {
+            var radio = FindDescendant<RadioButton>(border);
+            if (radio != null)
+            {
+                radio.IsChecked = true;
+            }
+        }
+    }
+
+    private void SwitchToAuthPanel(AuthorizationType authType)
+    {
+        if (_authPanels == null) return;
+        
+        var panelIndex = authType switch
+        {
+            AuthorizationType.None => 0,
+            AuthorizationType.BasicAuth => 1,
+            AuthorizationType.BearerToken => 2,
+            AuthorizationType.ApiKey => 3,
+            AuthorizationType.OAuth2 => 4,
+            _ => 0
+        };
+        
+        for (int i = 0; i < _authPanels.Length; i++)
+        {
+            _authPanels[i].Visibility = i == panelIndex ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private void UpdateAuthTypeComboBox(AuthorizationType authType)
+    {
+        if (AuthTypeComboBox?.ItemsSource is System.Collections.IList items)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i] is AuthTypeOption option && option.Type == authType)
+                {
+                    AuthTypeComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    private void UpdateAuthTypeRadioButtons(AuthorizationType authType)
+    {
+        // This is handled by the ItemsControl template - radio buttons will update via Tag binding
+    }
+
+    private void ApiKeyLocation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is ApiKeyLocationOption selectedLocation)
+        {
+            var auth = GetAuthorizationConfig();
+            if (auth != null)
+            {
+                auth.ApiKeyLocation = selectedLocation.Location;
+            }
+        }
+    }
+
+    private void ClearAuth_Click(object sender, RoutedEventArgs e)
+    {
+        var auth = GetAuthorizationConfig();
+        if (auth != null)
+        {
+            auth.Username = string.Empty;
+            auth.Password = string.Empty;
+            auth.BearerToken = string.Empty;
+            auth.ApiKeyName = string.Empty;
+            auth.ApiKeyValue = string.Empty;
+            auth.AccessToken = string.Empty;
+            auth.TokenType = "Bearer";
+            
+            // Clear UI fields
+            if (BasicAuthUsername != null) BasicAuthUsername.Text = string.Empty;
+            if (BasicAuthPassword != null) BasicAuthPassword.Password = string.Empty;
+            if (BearerTokenInput != null) BearerTokenInput.Text = string.Empty;
+            if (ApiKeyName != null) ApiKeyName.Text = string.Empty;
+            if (ApiKeyValue != null) ApiKeyValue.Password = string.Empty;
+            if (OAuth2AccessToken != null) OAuth2AccessToken.Text = string.Empty;
+            if (OAuth2TokenType != null) OAuth2TokenType.Text = "Bearer";
+        }
     }
 
     #endregion
