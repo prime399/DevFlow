@@ -30,6 +30,7 @@ public partial record MainModel
 
     public IReadOnlyList<string> Methods { get; } = new[] { "GET", "POST", "PUT", "PATCH", "DELETE" };
     public IReadOnlyList<ContentType> ContentTypes { get; } = Models.ContentTypes.All;
+    public IReadOnlyList<string> CommonHeaders { get; } = CommonHeaderKeys.All;
 
     public IState<string> SelectedMethod => State<string>.Value(this, () => "GET");
     public IState<string> RequestUrl => State<string>.Value(this, () => "https://echo.hoppscotch.io");
@@ -42,6 +43,11 @@ public partial record MainModel
     public ObservableCollection<RequestParameter> Parameters { get; } = new()
     {
         new RequestParameter("", "", "", true)
+    };
+
+    public ObservableCollection<RequestHeader> Headers { get; } = new()
+    {
+        new RequestHeader("", "", "", true)
     };
 
     public void AddParameter()
@@ -70,6 +76,32 @@ public partial record MainModel
         Parameters.Add(new RequestParameter("", "", "", true));
     }
 
+    public void AddHeader()
+    {
+        Headers.Add(new RequestHeader("", "", "", true));
+    }
+
+    public void DeleteHeader(RequestHeader header)
+    {
+        if (Headers.Count > 1)
+        {
+            Headers.Remove(header);
+        }
+        else
+        {
+            header.HeaderKey = string.Empty;
+            header.HeaderValue = string.Empty;
+            header.Description = string.Empty;
+            header.IsEnabled = true;
+        }
+    }
+
+    public void ClearAllHeaders()
+    {
+        Headers.Clear();
+        Headers.Add(new RequestHeader("", "", "", true));
+    }
+
     private string BuildQueryParamsFromCollection()
     {
         var enabledParams = Parameters.Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.ParamKey));
@@ -92,8 +124,8 @@ public partial record MainModel
         var urlInput = await RequestUrl;
         var methodName = await SelectedMethod ?? HttpMethod.Get.Method;
         var queryText = BuildQueryParamsFromCollection();
-        var headersRaw = await HeadersText ?? string.Empty;
         var bodyText = await BodyText ?? string.Empty;
+        var contentType = await SelectedContentType;
 
         if (string.IsNullOrWhiteSpace(urlInput))
         {
@@ -108,11 +140,14 @@ public partial record MainModel
         {
             var requestUri = BuildUri(urlInput, queryText);
             using var request = new HttpRequestMessage(new HttpMethod(methodName), requestUri);
-            AddHeaders(request, headersRaw);
+            
+            // Add headers from the Headers collection
+            AddHeadersFromCollection(request);
 
             if (AllowsBody(methodName) && !string.IsNullOrWhiteSpace(bodyText))
             {
-                request.Content = new StringContent(bodyText, Encoding.UTF8, "application/json");
+                var mediaType = !string.IsNullOrEmpty(contentType?.Value) ? contentType.Value : "application/json";
+                request.Content = new StringContent(bodyText, Encoding.UTF8, mediaType);
             }
 
             var httpClient = _httpClientFactory.CreateClient("ApiTester");
@@ -172,14 +207,15 @@ public partial record MainModel
         return string.Join("&", encoded);
     }
 
-    private static void AddHeaders(HttpRequestMessage request, string rawHeaders)
+    private void AddHeadersFromCollection(HttpRequestMessage request)
     {
-        foreach (var (key, value) in ParseKeyValuePairs(rawHeaders))
+        var enabledHeaders = Headers.Where(h => h.IsEnabled && !string.IsNullOrWhiteSpace(h.HeaderKey));
+        foreach (var header in enabledHeaders)
         {
-            if (!request.Headers.TryAddWithoutValidation(key, value))
+            if (!request.Headers.TryAddWithoutValidation(header.HeaderKey, header.HeaderValue ?? string.Empty))
             {
                 request.Content ??= new StringContent(string.Empty);
-                _ = request.Content.Headers.TryAddWithoutValidation(key, value);
+                _ = request.Content.Headers.TryAddWithoutValidation(header.HeaderKey, header.HeaderValue ?? string.Empty);
             }
         }
     }

@@ -53,6 +53,15 @@ public sealed partial class MainPage : Page
         return prop?.GetValue(dc) as ObservableCollection<RequestParameter>;
     }
 
+    private ObservableCollection<RequestHeader>? GetHeaders()
+    {
+        var dc = DataContext;
+        if (dc == null) return null;
+        
+        var prop = dc.GetType().GetProperty("Headers");
+        return prop?.GetValue(dc) as ObservableCollection<RequestHeader>;
+    }
+
     private void Tab_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button button && button.Tag is string tagStr && int.TryParse(tagStr, out int tabIndex))
@@ -190,6 +199,73 @@ public sealed partial class MainPage : Page
         {
             parameters.Clear();
             parameters.Add(new RequestParameter());
+        }
+    }
+
+    private void DeleteHeader_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is RequestHeader header)
+        {
+            var headers = GetHeaders();
+            if (headers != null)
+            {
+                if (headers.Count > 1)
+                {
+                    headers.Remove(header);
+                }
+                else
+                {
+                    header.HeaderKey = string.Empty;
+                    header.HeaderValue = string.Empty;
+                    header.Description = string.Empty;
+                    header.IsEnabled = true;
+                }
+            }
+        }
+    }
+
+    private void AddHeader_Click(object sender, RoutedEventArgs e)
+    {
+        var headers = GetHeaders();
+        headers?.Add(new RequestHeader());
+    }
+
+    private void ClearAllHeaders_Click(object sender, RoutedEventArgs e)
+    {
+        var headers = GetHeaders();
+        if (headers != null)
+        {
+            headers.Clear();
+            headers.Add(new RequestHeader());
+        }
+    }
+
+    private void ToggleHeaderActive_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is RequestHeader header)
+        {
+            header.IsEnabled = !header.IsEnabled;
+        }
+    }
+
+    private void HeaderKey_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+        {
+            var query = sender.Text?.ToLowerInvariant() ?? string.Empty;
+            var suggestions = CommonHeaderKeys.All
+                .Where(h => string.IsNullOrEmpty(query) || h.ToLowerInvariant().Contains(query))
+                .Take(15)
+                .ToList();
+            sender.ItemsSource = suggestions;
+        }
+    }
+
+    private void HeaderKey_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+    {
+        if (args.SelectedItem is string selectedHeader)
+        {
+            sender.Text = selectedHeader;
         }
     }
 }

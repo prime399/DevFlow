@@ -8,6 +8,26 @@
 
   <Page.Resources>
     <converters:HttpMethodToBrushConverter x:Key="HttpMethodToBrushConverter" />
+    <x:String x:Key="HeaderAccept">Accept</x:String>
+    <x:String x:Key="HeaderAcceptCharset">Accept-Charset</x:String>
+    <x:String x:Key="HeaderAcceptEncoding">Accept-Encoding</x:String>
+    <x:String x:Key="HeaderAcceptLanguage">Accept-Language</x:String>
+    <x:String x:Key="HeaderAuthorization">Authorization</x:String>
+    <x:String x:Key="HeaderCacheControl">Cache-Control</x:String>
+    <x:String x:Key="HeaderContentType">Content-Type</x:String>
+    <x:String x:Key="HeaderContentLength">Content-Length</x:String>
+    <x:String x:Key="HeaderContentEncoding">Content-Encoding</x:String>
+    <x:String x:Key="HeaderCookie">Cookie</x:String>
+    <x:String x:Key="HeaderHost">Host</x:String>
+    <x:String x:Key="HeaderOrigin">Origin</x:String>
+    <x:String x:Key="HeaderReferer">Referer</x:String>
+    <x:String x:Key="HeaderUserAgent">User-Agent</x:String>
+    <x:String x:Key="HeaderXApiKey">X-Api-Key</x:String>
+    <x:String x:Key="HeaderXRequestId">X-Request-ID</x:String>
+    <x:String x:Key="HeaderXCorrelationId">X-Correlation-ID</x:String>
+    <x:String x:Key="HeaderIfMatch">If-Match</x:String>
+    <x:String x:Key="HeaderIfNoneMatch">If-None-Match</x:String>
+    <x:String x:Key="HeaderIfModifiedSince">If-Modified-Since</x:String>
   </Page.Resources>
 
   <Grid utu:SafeArea.Insets="VisibleBounds"
@@ -487,14 +507,203 @@
             </Grid>
 
             <!-- Headers Tab Panel (Index 2) -->
-            <Grid x:Name="HeadersPanel" Visibility="Collapsed">
-              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
-                <TextBlock Text="Headers configuration coming soon..."
-                           Foreground="{StaticResource TextMutedBrush}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           FontSize="14" />
-              </Border>
-            </Grid>
+            <ScrollViewer x:Name="HeadersPanel" Visibility="Collapsed">
+              <Grid RowDefinitions="Auto,Auto,*" Padding="0">
+                <!-- Headers Section Header -->
+                <Border Grid.Row="0"
+                        Background="{StaticResource RequestBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,12">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                      <TextBlock Text="Header List"
+                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                 FontFamily="{StaticResource AppFontFamilySemiBold}"
+                                 FontSize="13"
+                                 VerticalAlignment="Center" />
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="10"
+                              Padding="8,2">
+                        <TextBlock Text="{Binding Headers.Count}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontFamily="{StaticResource MonospaceFontFamily}"
+                                   FontSize="11"
+                                   VerticalAlignment="Center" />
+                      </Border>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              Click="ClearAllHeaders_Click"
+                              ToolTipService.ToolTip="Clear all headers">
+                        <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              ToolTipService.ToolTip="Copy headers">
+                        <FontIcon Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              ToolTipService.ToolTip="Import headers">
+                        <FontIcon Glyph="{StaticResource IconGlyphEdit}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              Click="AddHeader_Click"
+                              ToolTipService.ToolTip="Add header">
+                        <FontIcon Glyph="{StaticResource IconGlyphAdd}" FontSize="14" Foreground="{StaticResource AccentPrimaryBrush}" />
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+
+                <!-- Headers Table Header -->
+                <Border Grid.Row="1"
+                        Background="{StaticResource TabBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="0">
+                  <Grid ColumnDefinitions="52,*,*,*,88">
+                    <Border Grid.Column="0"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="0,10" />
+                    <Border Grid.Column="1"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="16,10">
+                      <TextBlock Text="Key"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12" />
+                    </Border>
+                    <Border Grid.Column="2"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="16,10">
+                      <TextBlock Text="Value"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12" />
+                    </Border>
+                    <Border Grid.Column="3"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="16,10">
+                      <TextBlock Text="Description"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12" />
+                    </Border>
+                    <Border Grid.Column="4"
+                            Padding="8,10">
+                      <TextBlock Text="Actions"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12"
+                                 HorizontalAlignment="Center" />
+                    </Border>
+                  </Grid>
+                </Border>
+
+                <!-- Headers Table Rows -->
+                <StackPanel Grid.Row="2">
+                  <ItemsControl x:Name="HeadersItemsControl" ItemsSource="{Binding Headers}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                                BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                BorderThickness="0,0,0,1">
+                          <Grid ColumnDefinitions="52,*,*,*,88">
+                            <Border Grid.Column="0"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0"
+                                    Padding="0,8">
+                              <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                        MinWidth="0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
+                            </Border>
+                            <Border Grid.Column="1"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                              <AutoSuggestBox Text="{Binding HeaderKey, Mode=TwoWay}"
+                                              PlaceholderText="Type or select header..."
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              FontFamily="{StaticResource MonospaceFontFamily}"
+                                              FontSize="13"
+                                              Padding="16,10"
+                                              TextChanged="HeaderKey_TextChanged"
+                                              SuggestionChosen="HeaderKey_SuggestionChosen"
+                                              HorizontalAlignment="Stretch">
+                                <AutoSuggestBox.TextBoxStyle>
+                                  <Style TargetType="TextBox">
+                                    <Setter Property="Padding" Value="16,10" />
+                                    <Setter Property="FontFamily" Value="{StaticResource MonospaceFontFamily}" />
+                                    <Setter Property="FontSize" Value="13" />
+                                  </Style>
+                                </AutoSuggestBox.TextBoxStyle>
+                              </AutoSuggestBox>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                              <TextBox Text="{Binding HeaderValue, Mode=TwoWay}"
+                                       PlaceholderText="Value"
+                                       Style="{StaticResource ParameterTextBoxStyle}" />
+                            </Border>
+                            <Border Grid.Column="3"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                              <TextBox Text="{Binding Description, Mode=TwoWay}"
+                                       PlaceholderText="Description"
+                                       Style="{StaticResource ParameterTextBoxStyle}" />
+                            </Border>
+                            <StackPanel Grid.Column="4"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Spacing="4">
+                              <Button Style="{StaticResource IconButtonStyle}"
+                                      ToolTipService.ToolTip="Toggle active"
+                                      Click="ToggleHeaderActive_Click">
+                                <FontIcon Glyph="&#xE73E;" FontSize="12" Foreground="{StaticResource SuccessBrush}" />
+                              </Button>
+                              <Button Style="{StaticResource IconButtonStyle}"
+                                      ToolTipService.ToolTip="Delete header"
+                                      Click="DeleteHeader_Click">
+                                <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="12" Foreground="{StaticResource ErrorBrush}" />
+                              </Button>
+                            </StackPanel>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <!-- Add Header Row -->
+                  <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,0,1"
+                          Padding="16,12">
+                    <Button Click="AddHeader_Click"
+                            Style="{StaticResource IconButtonStyle}"
+                            HorizontalAlignment="Left"
+                            ToolTipService.ToolTip="Add new header">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="{StaticResource IconGlyphAdd}"
+                                  FontSize="14"
+                                  Foreground="{StaticResource AccentPrimaryBrush}" />
+                        <TextBlock Text="Add Header"
+                                   Foreground="{StaticResource AccentPrimaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                    </Button>
+                  </Border>
+                </StackPanel>
+              </Grid>
+            </ScrollViewer>
 
             <!-- Authorization Tab Panel (Index 3) -->
             <Grid x:Name="AuthPanel" Visibility="Collapsed">
