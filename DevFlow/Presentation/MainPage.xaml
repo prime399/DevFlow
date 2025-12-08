@@ -54,7 +54,7 @@
       </NavigationView.MenuItems>
 
       <NavigationView.Content>
-        <Grid RowDefinitions="Auto,Auto,*">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
           <!-- Request URL Bar -->
           <Border Grid.Row="0"
                   Background="{StaticResource RequestBarBackgroundBrush}"
@@ -134,22 +134,40 @@
               <!-- Left Tabs -->
               <StackPanel Grid.Column="0"
                           Orientation="Horizontal">
-                <Button Content="Parameters"
+                <Button x:Name="TabParameters"
+                        Content="Parameters"
+                        Tag="0"
+                        Click="Tab_Click"
                         Style="{StaticResource RequestTabActiveStyle}"
                         x:Uid="MainPage.Tab.Parameters" />
-                <Button Content="Body"
+                <Button x:Name="TabBody"
+                        Content="Body"
+                        Tag="1"
+                        Click="Tab_Click"
                         Style="{StaticResource RequestTabStyle}"
                         x:Uid="MainPage.Tab.Body" />
-                <Button Content="Headers"
+                <Button x:Name="TabHeaders"
+                        Content="Headers"
+                        Tag="2"
+                        Click="Tab_Click"
                         Style="{StaticResource RequestTabStyle}"
                         x:Uid="MainPage.Tab.Headers" />
-                <Button Content="Authorization"
+                <Button x:Name="TabAuth"
+                        Content="Authorization"
+                        Tag="3"
+                        Click="Tab_Click"
                         Style="{StaticResource RequestTabStyle}"
                         x:Uid="MainPage.Tab.Auth" />
-                <Button Content="Pre-request Script"
+                <Button x:Name="TabPreScript"
+                        Content="Pre-request Script"
+                        Tag="4"
+                        Click="Tab_Click"
                         Style="{StaticResource RequestTabStyle}"
                         x:Uid="MainPage.Tab.PreScript" />
-                <Button Content="Post-request Script"
+                <Button x:Name="TabPostScript"
+                        Content="Post-request Script"
+                        Tag="5"
+                        Click="Tab_Click"
                         Style="{StaticResource RequestTabStyle}"
                         x:Uid="MainPage.Tab.PostScript" />
               </StackPanel>
@@ -172,240 +190,436 @@
           </Border>
 
           <!-- Content Area -->
-          <ScrollViewer Grid.Row="2"
-                        Background="{StaticResource TabBarBackgroundBrush}">
-            <Grid RowDefinitions="Auto,Auto,*" Padding="0">
-              <!-- Query Parameters Section -->
+          <Grid Grid.Row="2" Background="{StaticResource TabBarBackgroundBrush}">
+            <!-- Parameters Tab Panel (Index 0) -->
+            <ScrollViewer x:Name="ParametersPanel" Visibility="Visible">
+              <Grid RowDefinitions="Auto,Auto,*" Padding="0">
+                <!-- Query Parameters Section -->
+                <Border Grid.Row="0"
+                        Background="{StaticResource RequestBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,12">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                      <TextBlock Text="Query Parameters"
+                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                 FontFamily="{StaticResource AppFontFamilySemiBold}"
+                                 FontSize="13"
+                                 VerticalAlignment="Center" />
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="10"
+                              Padding="8,2">
+                        <TextBlock Text="{Binding Parameters.Count}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontFamily="{StaticResource MonospaceFontFamily}"
+                                   FontSize="11"
+                                   VerticalAlignment="Center" />
+                      </Border>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              Click="ClearAllParameters_Click"
+                              ToolTipService.ToolTip="Clear all parameters">
+                        <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              Click="AddParameter_Click"
+                              ToolTipService.ToolTip="Add parameter">
+                        <FontIcon Glyph="{StaticResource IconGlyphAdd}" FontSize="14" Foreground="{StaticResource AccentPrimaryBrush}" />
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+
+                <!-- Parameters Table Header -->
+                <Border Grid.Row="1"
+                        Background="{StaticResource TabBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="0">
+                  <Grid ColumnDefinitions="52,*,*,*,88">
+                    <Border Grid.Column="0"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="0,10" />
+                    <Border Grid.Column="1"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="16,10">
+                      <TextBlock Text="Key"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12" />
+                    </Border>
+                    <Border Grid.Column="2"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="16,10">
+                      <TextBlock Text="Value"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12" />
+                    </Border>
+                    <Border Grid.Column="3"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            Padding="16,10">
+                      <TextBlock Text="Description"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12" />
+                    </Border>
+                    <Border Grid.Column="4"
+                            Padding="8,10">
+                      <TextBlock Text="Actions"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12"
+                                 HorizontalAlignment="Center" />
+                    </Border>
+                  </Grid>
+                </Border>
+
+                <!-- Parameters Table Rows -->
+                <StackPanel Grid.Row="2">
+                  <ItemsControl x:Name="ParametersItemsControl" ItemsSource="{Binding Parameters}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                                BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                BorderThickness="0,0,0,1">
+                          <Grid ColumnDefinitions="52,*,*,*,88">
+                            <Border Grid.Column="0"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0"
+                                    Padding="0,8">
+                              <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                        MinWidth="0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
+                            </Border>
+                            <Border Grid.Column="1"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                              <TextBox Text="{Binding ParamKey, Mode=TwoWay}"
+                                       PlaceholderText="Key"
+                                       Style="{StaticResource ParameterTextBoxStyle}" />
+                            </Border>
+                            <Border Grid.Column="2"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                              <TextBox Text="{Binding ParamValue, Mode=TwoWay}"
+                                       PlaceholderText="Value"
+                                       Style="{StaticResource ParameterTextBoxStyle}" />
+                            </Border>
+                            <Border Grid.Column="3"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                              <TextBox Text="{Binding Description, Mode=TwoWay}"
+                                       PlaceholderText="Description"
+                                       Style="{StaticResource ParameterTextBoxStyle}" />
+                            </Border>
+                            <StackPanel Grid.Column="4"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Spacing="4">
+                              <Button Style="{StaticResource IconButtonStyle}"
+                                      ToolTipService.ToolTip="Delete parameter"
+                                      Click="DeleteParameter_Click">
+                                <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="12" Foreground="{StaticResource ErrorBrush}" />
+                              </Button>
+                            </StackPanel>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <!-- Add Parameter Row -->
+                  <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,0,1"
+                          Padding="16,12">
+                    <Button Click="AddParameter_Click"
+                            Style="{StaticResource IconButtonStyle}"
+                            HorizontalAlignment="Left"
+                            ToolTipService.ToolTip="Add new parameter">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="{StaticResource IconGlyphAdd}"
+                                  FontSize="14"
+                                  Foreground="{StaticResource AccentPrimaryBrush}" />
+                        <TextBlock Text="Add Parameter"
+                                   Foreground="{StaticResource AccentPrimaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                    </Button>
+                  </Border>
+                </StackPanel>
+              </Grid>
+            </ScrollViewer>
+
+            <!-- Body Tab Panel (Index 1) -->
+            <Grid x:Name="BodyPanel" Visibility="Collapsed" RowDefinitions="Auto,*">
+              <!-- Body Header with Content Type -->
               <Border Grid.Row="0"
                       Background="{StaticResource RequestBarBackgroundBrush}"
                       BorderBrush="{StaticResource RequestBarBorderBrush}"
                       BorderThickness="0,0,0,1"
-                      Padding="16,12">
-                <Grid ColumnDefinitions="*,Auto">
-                  <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <TextBlock Text="Query Parameters"
+                      Padding="16,10">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+                  <TextBlock Text="Content Type"
+                             Foreground="{StaticResource TextSecondaryBrush}"
+                             FontFamily="{StaticResource AppFontFamilyMedium}"
+                             FontSize="13"
+                             VerticalAlignment="Center"
+                             Margin="0,0,12,0" />
+                  
+                  <!-- Content Type Dropdown -->
+                  <ComboBox Grid.Column="1"
+                            x:Name="ContentTypeComboBox"
+                            ItemsSource="{Binding ContentTypes}"
+                            SelectedItem="{Binding SelectedContentType, Mode=TwoWay}"
+                            MinWidth="180"
+                            Background="{StaticResource MethodSelectorBgBrush}"
+                            BorderThickness="1"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            Padding="12,8"
+                            Margin="0,0,16,0">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding Name}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonospaceFontFamily}"
+                                   FontSize="13" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  
+                  <!-- Override Toggle -->
+                  <StackPanel Grid.Column="2"
+                              Orientation="Horizontal"
+                              Spacing="8"
+                              VerticalAlignment="Center">
+                    <FontIcon Glyph="{StaticResource IconGlyphSync}"
+                              FontSize="14"
+                              Foreground="{StaticResource TextMutedBrush}" />
+                    <TextBlock Text="Override"
                                Foreground="{StaticResource TextSecondaryBrush}"
-                               FontFamily="{StaticResource AppFontFamilySemiBold}"
+                               FontFamily="{StaticResource AppFontFamilyMedium}"
                                FontSize="13"
                                VerticalAlignment="Center" />
-                    <Border Background="{StaticResource SurfaceVariantBrush}"
-                            CornerRadius="10"
-                            Padding="8,2">
-                      <TextBlock Text="{Binding Parameters.Count}"
-                                 Foreground="{StaticResource TextMutedBrush}"
-                                 FontFamily="{StaticResource MonospaceFontFamily}"
-                                 FontSize="11"
-                                 VerticalAlignment="Center" />
-                    </Border>
+                    <CheckBox IsChecked="{Binding OverrideContentType, Mode=TwoWay}"
+                              MinWidth="0"
+                              VerticalAlignment="Center" />
                   </StackPanel>
-                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                  
+                  <!-- Right side toolbar -->
+                  <StackPanel Grid.Column="4"
+                              Orientation="Horizontal"
+                              Spacing="4">
                     <Button Style="{StaticResource IconButtonStyle}"
-                            Click="ClearAllParameters_Click"
-                            ToolTipService.ToolTip="Clear all parameters">
+                            ToolTipService.ToolTip="Clear body">
                       <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
                     </Button>
                     <Button Style="{StaticResource IconButtonStyle}"
-                            Click="AddParameter_Click"
-                            ToolTipService.ToolTip="Add parameter">
-                      <FontIcon Glyph="{StaticResource IconGlyphAdd}" FontSize="14" Foreground="{StaticResource AccentPrimaryBrush}" />
+                            ToolTipService.ToolTip="Copy body">
+                      <FontIcon Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                    </Button>
+                    <Button Style="{StaticResource IconButtonStyle}"
+                            ToolTipService.ToolTip="Format JSON"
+                            Click="FormatJson_Click">
+                      <FontIcon Glyph="{StaticResource IconGlyphEdit}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
                     </Button>
                   </StackPanel>
                 </Grid>
               </Border>
-
-              <!-- Parameters Table Header -->
+              
+              <!-- Code Editor with Line Numbers -->
               <Border Grid.Row="1"
-                      Background="{StaticResource TabBarBackgroundBrush}"
-                      BorderBrush="{StaticResource RequestBarBorderBrush}"
-                      BorderThickness="0,0,0,1"
-                      Padding="0">
-                <Grid ColumnDefinitions="52,*,*,*,88">
+                      Background="{StaticResource RequestBarBackgroundBrush}"
+                      Margin="0">
+                <Grid ColumnDefinitions="Auto,*">
+                  <!-- Line Numbers -->
                   <Border Grid.Column="0"
+                          Background="{StaticResource SurfaceVariantBrush}"
                           BorderBrush="{StaticResource RequestBarBorderBrush}"
                           BorderThickness="0,0,1,0"
-                          Padding="0,10" />
-                  <Border Grid.Column="1"
-                          BorderBrush="{StaticResource RequestBarBorderBrush}"
-                          BorderThickness="0,0,1,0"
-                          Padding="16,10">
-                    <TextBlock Text="Key"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               FontFamily="{StaticResource AppFontFamilyMedium}"
-                               FontSize="12" />
+                          Padding="8,12"
+                          MinWidth="48">
+                    <ItemsControl x:Name="LineNumbersControl">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding}"
+                                     Foreground="{StaticResource TextMutedBrush}"
+                                     FontFamily="{StaticResource MonospaceFontFamily}"
+                                     FontSize="13"
+                                     HorizontalAlignment="Right"
+                                     Padding="0,1" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                   </Border>
-                  <Border Grid.Column="2"
-                          BorderBrush="{StaticResource RequestBarBorderBrush}"
-                          BorderThickness="0,0,1,0"
-                          Padding="16,10">
-                    <TextBlock Text="Value"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               FontFamily="{StaticResource AppFontFamilyMedium}"
-                               FontSize="12" />
-                  </Border>
-                  <Border Grid.Column="3"
-                          BorderBrush="{StaticResource RequestBarBorderBrush}"
-                          BorderThickness="0,0,1,0"
-                          Padding="16,10">
-                    <TextBlock Text="Description"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               FontFamily="{StaticResource AppFontFamilyMedium}"
-                               FontSize="12" />
-                  </Border>
-                  <Border Grid.Column="4"
-                          Padding="8,10">
-                    <TextBlock Text="Actions"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               FontFamily="{StaticResource AppFontFamilyMedium}"
-                               FontSize="12"
-                               HorizontalAlignment="Center" />
-                  </Border>
+                  
+                  <!-- Code Editor -->
+                  <ScrollViewer Grid.Column="1"
+                                HorizontalScrollBarVisibility="Auto"
+                                VerticalScrollBarVisibility="Auto">
+                    <TextBox x:Name="BodyTextBox"
+                             Text="{Binding BodyText, Mode=TwoWay}"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             Background="Transparent"
+                             Foreground="{StaticResource TextPrimaryBrush}"
+                             FontFamily="{StaticResource MonospaceFontFamily}"
+                             FontSize="13"
+                             BorderThickness="0"
+                             Padding="12"
+                             MinHeight="400"
+                             TextChanged="BodyTextBox_TextChanged"
+                             PlaceholderText="Enter request body here..." />
+                  </ScrollViewer>
                 </Grid>
               </Border>
-
-              <!-- Parameters Table Rows -->
-              <StackPanel Grid.Row="2">
-                <ItemsControl x:Name="ParametersItemsControl" ItemsSource="{Binding Parameters}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border Background="{StaticResource RequestBarBackgroundBrush}"
-                              BorderBrush="{StaticResource RequestBarBorderBrush}"
-                              BorderThickness="0,0,0,1">
-                        <Grid ColumnDefinitions="52,*,*,*,88">
-                          <Border Grid.Column="0"
-                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
-                                  BorderThickness="0,0,1,0"
-                                  Padding="0,8">
-                            <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}"
-                                      MinWidth="0"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center" />
-                          </Border>
-                          <Border Grid.Column="1"
-                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
-                                  BorderThickness="0,0,1,0">
-                            <TextBox Text="{Binding ParamKey, Mode=TwoWay}"
-                                     PlaceholderText="Key"
-                                     Style="{StaticResource ParameterTextBoxStyle}" />
-                          </Border>
-                          <Border Grid.Column="2"
-                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
-                                  BorderThickness="0,0,1,0">
-                            <TextBox Text="{Binding ParamValue, Mode=TwoWay}"
-                                     PlaceholderText="Value"
-                                     Style="{StaticResource ParameterTextBoxStyle}" />
-                          </Border>
-                          <Border Grid.Column="3"
-                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
-                                  BorderThickness="0,0,1,0">
-                            <TextBox Text="{Binding Description, Mode=TwoWay}"
-                                     PlaceholderText="Description"
-                                     Style="{StaticResource ParameterTextBoxStyle}" />
-                          </Border>
-                          <StackPanel Grid.Column="4"
-                                      Orientation="Horizontal"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"
-                                      Spacing="4">
-                            <Button Style="{StaticResource IconButtonStyle}"
-                                    ToolTipService.ToolTip="Delete parameter"
-                                    Click="DeleteParameter_Click">
-                              <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="12" Foreground="{StaticResource ErrorBrush}" />
-                            </Button>
-                          </StackPanel>
-                        </Grid>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Add Parameter Row -->
-                <Border Background="{StaticResource RequestBarBackgroundBrush}"
-                        BorderBrush="{StaticResource RequestBarBorderBrush}"
-                        BorderThickness="0,0,0,1"
-                        Padding="16,12">
-                  <Button Click="AddParameter_Click"
-                          Style="{StaticResource IconButtonStyle}"
-                          HorizontalAlignment="Left"
-                          ToolTipService.ToolTip="Add new parameter">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <FontIcon Glyph="{StaticResource IconGlyphAdd}"
-                                FontSize="14"
-                                Foreground="{StaticResource AccentPrimaryBrush}" />
-                      <TextBlock Text="Add Parameter"
-                                 Foreground="{StaticResource AccentPrimaryBrush}"
-                                 FontFamily="{StaticResource AppFontFamilyMedium}"
-                                 FontSize="13"
-                                 VerticalAlignment="Center" />
-                    </StackPanel>
-                  </Button>
-                </Border>
-
-                <!-- Response Section (collapsible) -->
-                <Border Background="{StaticResource RequestBarBackgroundBrush}"
-                        Margin="0,16,0,0"
-                        CornerRadius="8"
-                        Padding="16">
-                  <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="Response"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   FontFamily="{StaticResource AppFontFamilySemiBold}"
-                                   FontSize="14"
-                                   VerticalAlignment="Center" />
-                        <Border Background="{StaticResource SuccessBrush}"
-                                CornerRadius="4"
-                                Padding="8,4"
-                                Visibility="{Binding ResponseStatus, Converter={StaticResource NullToCollapsedConverter}, FallbackValue=Collapsed}">
-                          <TextBlock Text="{Binding ResponseStatus}"
-                                     Foreground="{StaticResource OverlayBrush}"
-                                     FontFamily="{StaticResource AppFontFamilyBold}"
-                                     FontSize="12" />
-                        </Border>
-                        <TextBlock Text="{Binding ResponseMeta}"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   FontFamily="{StaticResource MonospaceFontFamily}"
-                                   FontSize="12"
-                                   VerticalAlignment="Center" />
-                      </StackPanel>
-                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                        <Button Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Copy Response">
-                          <FontIcon Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
-                        </Button>
-                        <Button Style="{StaticResource IconButtonStyle}"
-                                Command="{Binding ResetResponse}"
-                                ToolTipService.ToolTip="Clear Response">
-                          <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
-                        </Button>
-                      </StackPanel>
-                    </Grid>
-
-                    <!-- Error Message -->
-                    <TextBlock Text="{Binding ErrorMessage}"
-                               Foreground="{StaticResource ErrorBrush}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               FontSize="12"
-                               Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}, FallbackValue=Collapsed}" />
-
-                    <!-- Response Body -->
-                    <Border Background="{StaticResource InputBackgroundBrush}"
-                            CornerRadius="6"
-                            Padding="12"
-                            MinHeight="200"
-                            MaxHeight="400">
-                      <ScrollViewer>
-                        <TextBlock Text="{Binding ResponseBody}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   FontFamily="{StaticResource MonospaceFontFamily}"
-                                   FontSize="12"
-                                   TextWrapping="Wrap" />
-                      </ScrollViewer>
-                    </Border>
-                  </StackPanel>
-                </Border>
-              </StackPanel>
             </Grid>
-          </ScrollViewer>
+
+            <!-- Headers Tab Panel (Index 2) -->
+            <Grid x:Name="HeadersPanel" Visibility="Collapsed">
+              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
+                <TextBlock Text="Headers configuration coming soon..."
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontFamily="{StaticResource AppFontFamily}"
+                           FontSize="14" />
+              </Border>
+            </Grid>
+
+            <!-- Authorization Tab Panel (Index 3) -->
+            <Grid x:Name="AuthPanel" Visibility="Collapsed">
+              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
+                <TextBlock Text="Authorization configuration coming soon..."
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontFamily="{StaticResource AppFontFamily}"
+                           FontSize="14" />
+              </Border>
+            </Grid>
+
+            <!-- Pre-request Script Tab Panel (Index 4) -->
+            <Grid x:Name="PreScriptPanel" Visibility="Collapsed">
+              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
+                <TextBlock Text="Pre-request script coming soon..."
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontFamily="{StaticResource AppFontFamily}"
+                           FontSize="14" />
+              </Border>
+            </Grid>
+
+            <!-- Post-request Script Tab Panel (Index 5) -->
+            <Grid x:Name="PostScriptPanel" Visibility="Collapsed">
+              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
+                <TextBlock Text="Post-request script coming soon..."
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontFamily="{StaticResource AppFontFamily}"
+                           FontSize="14" />
+              </Border>
+            </Grid>
+          </Grid>
+
+          <!-- Response Section - Always visible at bottom -->
+          <Border Grid.Row="3"
+                  Background="{StaticResource RequestBarBackgroundBrush}"
+                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                  BorderThickness="0,1,0,0"
+                  Padding="16">
+            <Grid RowDefinitions="Auto,Auto,*">
+              <!-- Response Header -->
+              <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <TextBlock Text="Response"
+                             Foreground="{StaticResource TextPrimaryBrush}"
+                             FontFamily="{StaticResource AppFontFamilySemiBold}"
+                             FontSize="14"
+                             VerticalAlignment="Center" />
+                  <Border Background="{StaticResource SuccessBrush}"
+                          CornerRadius="4"
+                          Padding="8,4">
+                    <TextBlock Text="{Binding ResponseStatus}"
+                               Foreground="{StaticResource OverlayBrush}"
+                               FontFamily="{StaticResource AppFontFamilyBold}"
+                               FontSize="12" />
+                  </Border>
+                  <TextBlock Text="{Binding ResponseMeta}"
+                             Foreground="{StaticResource TextMutedBrush}"
+                             FontFamily="{StaticResource MonospaceFontFamily}"
+                             FontSize="12"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                  <Button Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Copy Response">
+                    <FontIcon Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                  </Button>
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          Command="{Binding ResetResponse}"
+                          ToolTipService.ToolTip="Clear Response">
+                    <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                  </Button>
+                </StackPanel>
+              </Grid>
+
+              <!-- Error Message -->
+              <TextBlock Grid.Row="1"
+                         Text="{Binding ErrorMessage}"
+                         Foreground="{StaticResource ErrorBrush}"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="12"
+                         Margin="0,0,0,8"
+                         Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}, FallbackValue=Collapsed}" />
+
+              <!-- Response Body with Line Numbers -->
+              <Border Grid.Row="2"
+                      Background="{StaticResource InputBackgroundBrush}"
+                      CornerRadius="6"
+                      MinHeight="180"
+                      MaxHeight="300">
+                <Grid ColumnDefinitions="Auto,*">
+                  <!-- Line Numbers -->
+                  <Border Grid.Column="0"
+                          Background="{StaticResource SurfaceVariantBrush}"
+                          CornerRadius="6,0,0,6"
+                          Padding="8,12"
+                          MinWidth="40">
+                    <ItemsControl x:Name="ResponseLineNumbersControl">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding}"
+                                     Foreground="{StaticResource TextMutedBrush}"
+                                     FontFamily="{StaticResource MonospaceFontFamily}"
+                                     FontSize="12"
+                                     HorizontalAlignment="Right"
+                                     Padding="0,1" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                  
+                  <!-- Response Content -->
+                  <ScrollViewer Grid.Column="1"
+                                HorizontalScrollBarVisibility="Auto"
+                                VerticalScrollBarVisibility="Auto"
+                                Padding="12">
+                    <TextBlock x:Name="ResponseBodyText"
+                               Text="{Binding ResponseBody}"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource MonospaceFontFamily}"
+                               FontSize="12"
+                               TextWrapping="NoWrap" />
+                  </ScrollViewer>
+                </Grid>
+              </Border>
+            </Grid>
+          </Border>
         </Grid>
       </NavigationView.Content>
     </NavigationView>

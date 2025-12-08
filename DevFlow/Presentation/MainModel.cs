@@ -29,11 +29,15 @@ public partial record MainModel
     public string? Title { get; }
 
     public IReadOnlyList<string> Methods { get; } = new[] { "GET", "POST", "PUT", "PATCH", "DELETE" };
+    public IReadOnlyList<ContentType> ContentTypes { get; } = Models.ContentTypes.All;
 
     public IState<string> SelectedMethod => State<string>.Value(this, () => "GET");
     public IState<string> RequestUrl => State<string>.Value(this, () => "https://echo.hoppscotch.io");
     public IState<string> HeadersText => State<string>.Value(this, () => "accept: application/json");
-    public IState<string> BodyText => State<string>.Value(this, () => "{\n  \"hello\": \"world\"\n}");
+    public IState<string> BodyText => State<string>.Value(this, () => "{\n  \"method\": \"POST\",\n  \"args\": {},\n  \"data\": \"\",\n  \"headers\": {\n    \"accept\": \"*/*,image/webp\",\n    \"accept-encoding\": \"gzip\"\n  }\n}");
+    public IState<ContentType> SelectedContentType => State<ContentType>.Value(this, () => Models.ContentTypes.ApplicationJson);
+    public IState<bool> OverrideContentType => State<bool>.Value(this, () => false);
+    public IState<int> SelectedTabIndex => State<int>.Value(this, () => 0);
 
     public ObservableCollection<RequestParameter> Parameters { get; } = new()
     {
