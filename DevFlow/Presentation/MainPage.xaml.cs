@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using DevFlow.Helpers;
 using DevFlow.Models;
+using Microsoft.UI.Xaml.Input;
 
 namespace DevFlow.Presentation;
 
@@ -11,6 +12,9 @@ public sealed partial class MainPage : Page
     private int _currentResponseTabIndex = 0;
     private bool _wrapLines = false;
     private string _filterText = string.Empty;
+    private bool _isResizing = false;
+    private double _startY;
+    private double _startHeight;
     private readonly Button[] _tabButtons;
     private readonly FrameworkElement[] _tabPanels;
     private Button[] _responseTabButtons = null!;
@@ -505,6 +509,52 @@ public sealed partial class MainPage : Page
             dataPackage.SetText(text);
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
         }
+    }
+
+    #endregion
+
+    #region Response Splitter Handlers
+
+    private void ResponseSplitter_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border splitter)
+        {
+            _isResizing = true;
+            _startY = e.GetCurrentPoint(this).Position.Y;
+            _startHeight = ResponseSection?.Height ?? 280;
+            splitter.CapturePointer(e.Pointer);
+            e.Handled = true;
+        }
+    }
+
+    private void ResponseSplitter_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isResizing && ResponseSection != null)
+        {
+            var currentY = e.GetCurrentPoint(this).Position.Y;
+            var delta = _startY - currentY; // Negative when dragging down, positive when dragging up
+            var newHeight = _startHeight + delta;
+            
+            // Clamp to min/max bounds
+            newHeight = Math.Max(ResponseSection.MinHeight, Math.Min(ResponseSection.MaxHeight, newHeight));
+            ResponseSection.Height = newHeight;
+            e.Handled = true;
+        }
+    }
+
+    private void ResponseSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border splitter)
+        {
+            _isResizing = false;
+            splitter.ReleasePointerCapture(e.Pointer);
+            e.Handled = true;
+        }
+    }
+
+    private void ResponseSplitter_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        _isResizing = false;
     }
 
     #endregion
