@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using DevFlow.Helpers;
 using DevFlow.Models;
+using DevFlow.Services.Scripting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
@@ -22,6 +23,7 @@ public sealed partial class MainPage : Page
     private Button[] _responseTabButtons = null!;
     private FrameworkElement[] _responseTabPanels = null!;
     private FrameworkElement[] _authPanels = null!;
+    private ScriptExecutionResult? _lastScriptResult;
 
     public MainPage()
     {
@@ -48,6 +50,12 @@ public sealed partial class MainPage : Page
         
         // Initialize first radio button as checked
         InitializeAuthTypeRadioButtons();
+        
+        // Subscribe to script execution events
+        if (PreRequestScriptEditor != null)
+        {
+            PreRequestScriptEditor.ScriptExecuted += OnPreRequestScriptExecuted;
+        }
         
         // Register for text binding updates
         if (BodyTextBox != null)
@@ -403,6 +411,27 @@ public sealed partial class MainPage : Page
         if (tabIndex == 2 && ResponseHeadersControl != null)
         {
             System.Diagnostics.Debug.WriteLine($"  ResponseHeadersControl.ItemsSource has {(ResponseHeadersControl.ItemsSource as System.Collections.ICollection)?.Count ?? 0} items");
+        }
+    }
+
+    private void OnPreRequestScriptExecuted(object? sender, ScriptExecutionResult result)
+    {
+        _lastScriptResult = result;
+        UpdateTestResults(result);
+    }
+
+    private void UpdateTestResults(ScriptExecutionResult? result)
+    {
+        if (TestResultsViewer != null)
+        {
+            TestResultsViewer.UpdateResults(result);
+            
+            // If there are test results, show a badge or indicator on the tab
+            if (result?.HasTests == true)
+            {
+                var badgeText = result.AllPassed ? "✓" : $"{result.FailedCount}";
+                // Could update tab text here if desired
+            }
         }
     }
 

@@ -12,4 +12,9 @@
     -->
     <NoWarn>$(NoWarn);NU1507;NETSDK1201;PRI257</NoWarn>
   </PropertyGroup>
+
+  <!-- JavaScript interpreter for pre-request scripts -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'DevFlow'">
+    <PackageReference Include="Jint" />
+  </ItemGroup>
 </Project>

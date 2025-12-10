@@ -1,0 +1,238 @@
+<UserControl x:Class="DevFlow.Controls.TestResultsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DevFlow.Controls"
+             xmlns:converters="using:DevFlow.Converters">
+
+    <UserControl.Resources>
+        <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
+    
+    <Grid Background="{StaticResource SurfaceBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Summary Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource RequestBarBackgroundBrush}"
+                BorderBrush="{StaticResource RequestBarBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- Status Icon and Title -->
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border x:Name="StatusBadge"
+                            Background="{StaticResource TextMutedBrush}"
+                            CornerRadius="16"
+                            Width="32" Height="32"
+                            VerticalAlignment="Center">
+                        <FontIcon x:Name="StatusIcon"
+                                  Glyph="&#xE9D9;"
+                                  FontSize="16"
+                                  Foreground="White"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="TitleText"
+                                   Text="Test Results"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilySemiBold}"
+                                   FontSize="14" />
+                        <TextBlock x:Name="SummaryText"
+                                   Text="No tests run"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontFamily="{StaticResource AppFontFamily}"
+                                   FontSize="12" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Stats Pills -->
+                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal" 
+                            Spacing="8" 
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <!-- Passed -->
+                    <Border x:Name="PassedBadge"
+                            Background="#1A166534"
+                            BorderBrush="{StaticResource SuccessBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="12,4"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE73E;" FontSize="12" Foreground="{StaticResource SuccessBrush}" />
+                            <TextBlock x:Name="PassedCount"
+                                       Text="0 Passed"
+                                       Foreground="{StaticResource SuccessBrush}"
+                                       FontFamily="{StaticResource AppFontFamilyMedium}"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Failed -->
+                    <Border x:Name="FailedBadge"
+                            Background="#1AF38BA8"
+                            BorderBrush="{StaticResource ErrorBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="12,4"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="{StaticResource ErrorBrush}" />
+                            <TextBlock x:Name="FailedCount"
+                                       Text="0 Failed"
+                                       Foreground="{StaticResource ErrorBrush}"
+                                       FontFamily="{StaticResource AppFontFamilyMedium}"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Skipped -->
+                    <Border x:Name="SkippedBadge"
+                            Background="#1AF9E2AF"
+                            BorderBrush="{StaticResource WarningBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="12,4"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE72B;" FontSize="12" Foreground="{StaticResource WarningBrush}" />
+                            <TextBlock x:Name="SkippedCount"
+                                       Text="0 Skipped"
+                                       Foreground="{StaticResource WarningBrush}"
+                                       FontFamily="{StaticResource AppFontFamilyMedium}"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Duration -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE916;" FontSize="12" Foreground="{StaticResource TextMutedBrush}" />
+                    <TextBlock x:Name="DurationText"
+                               Text="0ms"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontFamily="{StaticResource MonospaceFontFamily}"
+                               FontSize="12" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Test Results List -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Empty State -->
+                <StackPanel x:Name="EmptyState"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="12"
+                            Margin="0,48">
+                    <FontIcon Glyph="&#xE9D9;" FontSize="48" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
+                    <TextBlock Text="No test results yet"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontFamily="{StaticResource AppFontFamilyMedium}"
+                               FontSize="14"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Write tests using pw.test() in Pre-request Script"
+                               Foreground="{StaticResource TextSubtleBrush}"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="12"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Results List -->
+                <ItemsControl x:Name="ResultsListControl" Visibility="Collapsed">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="16,12">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Status Icon -->
+                                    <Border Width="28" Height="28"
+                                            CornerRadius="14"
+                                            VerticalAlignment="Top"
+                                            Margin="0,2,0,0">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="{Binding StatusColor, Converter={StaticResource StatusToColorConverter}}" Opacity="0.15" />
+                                        </Border.Background>
+                                        <FontIcon Glyph="{Binding StatusIcon}"
+                                                  FontSize="14"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center">
+                                            <FontIcon.Foreground>
+                                                <SolidColorBrush Color="{Binding StatusColor, Converter={StaticResource StatusToColorConverter}}" />
+                                            </FontIcon.Foreground>
+                                        </FontIcon>
+                                    </Border>
+
+                                    <!-- Test Details -->
+                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="4">
+                                        <TextBlock Text="{Binding Name}"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                                   FontSize="13" />
+                                        <TextBlock Text="{Binding Message}"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   FontFamily="{StaticResource AppFontFamily}"
+                                                   FontSize="12"
+                                                   TextWrapping="Wrap"
+                                                   Visibility="{Binding Message, Converter={StaticResource StringToVisibilityConverter}}" />
+                                        
+                                        <!-- Expected/Actual for failed tests -->
+                                        <Border Visibility="{Binding HasExpectedActual, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                Background="{StaticResource TabBarBackgroundBrush}"
+                                                CornerRadius="6"
+                                                Padding="12,8"
+                                                Margin="0,4,0,0">
+                                            <Grid RowDefinitions="Auto,Auto">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="Expected:"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               FontFamily="{StaticResource AppFontFamily}"
+                                                               FontSize="11"
+                                                               Width="60" />
+                                                    <TextBlock Text="{Binding Expected}"
+                                                               Foreground="{StaticResource SuccessBrush}"
+                                                               FontFamily="{StaticResource MonospaceFontFamily}"
+                                                               FontSize="11" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                                    <TextBlock Text="Actual:"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               FontFamily="{StaticResource AppFontFamily}"
+                                                               FontSize="11"
+                                                               Width="60" />
+                                                    <TextBlock Text="{Binding Actual}"
+                                                               Foreground="{StaticResource ErrorBrush}"
+                                                               FontFamily="{StaticResource MonospaceFontFamily}"
+                                                               FontSize="11" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Duration -->
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding DurationText}"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               FontFamily="{StaticResource MonospaceFontFamily}"
+                                               FontSize="11"
+                                               VerticalAlignment="Top"
+                                               Margin="12,4,0,0" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

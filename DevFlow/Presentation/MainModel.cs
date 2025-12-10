@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using DevFlow.Models;
+using DevFlow.Services.Scripting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 
@@ -63,6 +64,10 @@ public partial record MainModel
     public IState<ContentType> SelectedContentType => State<ContentType>.Value(this, () => Models.ContentTypes.ApplicationJson);
     public IState<bool> OverrideContentType => State<bool>.Value(this, () => false);
     public IState<int> SelectedTabIndex => State<int>.Value(this, () => 0);
+    
+    // Pre-request script
+    public IState<string> PreRequestScript => State<string>.Value(this, () => string.Empty);
+    private readonly PreRequestScriptRunner _scriptRunner = new();
 
     // These now reference the active tab's collections
     public ObservableCollection<RequestParameter> Parameters => TabManager.ActiveTab?.Parameters ?? new ObservableCollection<RequestParameter>();
@@ -150,10 +155,24 @@ public partial record MainModel
             return;
         }
 
-        var urlInput = await RequestUrl;
+        // Execute pre-request script
+        var script = await PreRequestScript;
+        if (!string.IsNullOrWhiteSpace(script))
+        {
+            var scriptResult = _scriptRunner.Execute(script);
+            if (!scriptResult.IsSuccess)
+            {
+                await ErrorMessage.UpdateAsync(_ => $"Pre-request script error: {scriptResult.ErrorMessage}", ct);
+                return;
+            }
+        }
+
+        // Get values and resolve environment variables
+        var env = ScriptEnvironment.Global;
+        var urlInput = env.ResolveVariables(await RequestUrl ?? string.Empty);
         var methodName = await SelectedMethod ?? HttpMethod.Get.Method;
         var queryText = BuildQueryParamsFromCollection();
-        var bodyText = await BodyText ?? string.Empty;
+        var bodyText = env.ResolveVariables(await BodyText ?? string.Empty);
         var contentType = await SelectedContentType;
 
         if (string.IsNullOrWhiteSpace(urlInput))

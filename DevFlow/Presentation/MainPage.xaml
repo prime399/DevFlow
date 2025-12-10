@@ -3,6 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:utu="using:Uno.Toolkit.UI"
       xmlns:converters="using:DevFlow.Converters"
+      xmlns:controls="using:DevFlow.Controls"
       NavigationCacheMode="Required"
       Background="{StaticResource AppBackgroundBrush}">
 
@@ -1188,12 +1189,8 @@
 
             <!-- Pre-request Script Tab Panel (Index 4) -->
             <Grid x:Name="PreScriptPanel" Visibility="Collapsed">
-              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
-                <TextBlock Text="Pre-request script coming soon..."
-                           Foreground="{StaticResource TextMutedBrush}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           FontSize="14" />
-              </Border>
+              <controls:ScriptEditorControl x:Name="PreRequestScriptEditor" 
+                                            ScriptText="{Binding PreRequestScript, Mode=TwoWay}" />
             </Grid>
 
             <!-- Post-request Script Tab Panel (Index 5) -->
@@ -1536,21 +1533,7 @@
 
                 <!-- Test Results Panel -->
                 <Grid x:Name="ResponseTestResultsPanel" Visibility="Collapsed">
-                  <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8">
-                      <FontIcon Glyph="&#xE9D9;" FontSize="32" Foreground="{StaticResource TextMutedBrush}" />
-                      <TextBlock Text="No test results"
-                                 Foreground="{StaticResource TextMutedBrush}"
-                                 FontFamily="{StaticResource AppFontFamily}"
-                                 FontSize="14"
-                                 HorizontalAlignment="Center" />
-                      <TextBlock Text="Write tests in the Pre/Post-request Script tabs"
-                                 Foreground="{StaticResource TextSubtleBrush}"
-                                 FontFamily="{StaticResource AppFontFamily}"
-                                 FontSize="12"
-                                 HorizontalAlignment="Center" />
-                    </StackPanel>
-                  </Border>
+                  <controls:TestResultsControl x:Name="TestResultsViewer" />
                 </Grid>
               </Grid>
             </Grid>
