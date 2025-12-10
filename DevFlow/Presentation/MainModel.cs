@@ -65,9 +65,14 @@ public partial record MainModel
     public IState<bool> OverrideContentType => State<bool>.Value(this, () => false);
     public IState<int> SelectedTabIndex => State<int>.Value(this, () => 0);
     
-    // Pre-request script
+    // Pre-request and Post-request scripts
     public IState<string> PreRequestScript => State<string>.Value(this, () => string.Empty);
-    private readonly PreRequestScriptRunner _scriptRunner = new();
+    public IState<string> PostRequestScript => State<string>.Value(this, () => string.Empty);
+    private readonly PreRequestScriptRunner _preScriptRunner = new();
+    private readonly PostRequestScriptRunner _postScriptRunner = new();
+    
+    // Event fired when scripts are executed (for test results UI)
+    public event EventHandler<ScriptExecutionResult>? ScriptExecuted;
 
     // These now reference the active tab's collections
     public ObservableCollection<RequestParameter> Parameters => TabManager.ActiveTab?.Parameters ?? new ObservableCollection<RequestParameter>();
@@ -156,13 +161,15 @@ public partial record MainModel
         }
 
         // Execute pre-request script
+        ScriptExecutionResult? preScriptResult = null;
         var script = await PreRequestScript;
         if (!string.IsNullOrWhiteSpace(script))
         {
-            var scriptResult = _scriptRunner.Execute(script);
-            if (!scriptResult.IsSuccess)
+            preScriptResult = _preScriptRunner.Execute(script);
+            if (!preScriptResult.IsSuccess)
             {
-                await ErrorMessage.UpdateAsync(_ => $"Pre-request script error: {scriptResult.ErrorMessage}", ct);
+                await ErrorMessage.UpdateAsync(_ => $"Pre-request script error: {preScriptResult.ErrorMessage}", ct);
+                ScriptExecuted?.Invoke(this, preScriptResult);
                 return;
             }
         }
@@ -262,6 +269,30 @@ public partial record MainModel
                     ResponseHeaders.Add(h);
                 }
             }
+            
+            // Execute post-request script with response context
+            var postScript = await PostRequestScript;
+            if (!string.IsNullOrWhiteSpace(postScript))
+            {
+                var responseContext = new ResponseContext
+                {
+                    StatusCode = (int)response.StatusCode,
+                    Body = responseText,
+                    Headers = headersList.ToDictionary(h => h.Key, h => h.Value),
+                    ResponseTime = stopwatch.ElapsedMilliseconds,
+                    ResponseSize = responseBytes.Length
+                };
+                
+                var postScriptResult = _postScriptRunner.Execute(postScript, responseContext);
+                
+                // Merge test results from pre and post scripts
+                var combinedResult = MergeScriptResults(preScriptResult, postScriptResult);
+                ScriptExecuted?.Invoke(this, combinedResult);
+            }
+            else if (preScriptResult != null)
+            {
+                ScriptExecuted?.Invoke(this, preScriptResult);
+            }
         }
         catch (Exception ex)
         {
@@ -288,6 +319,22 @@ public partial record MainModel
         await ErrorMessage.UpdateAsync(_ => string.Empty, ct);
         var dispatcher = _dispatcherQueue ?? (Microsoft.UI.Xaml.Application.Current as App)?.MainWindow?.DispatcherQueue;
         dispatcher?.TryEnqueue(() => ResponseHeaders.Clear());
+    }
+
+    private ScriptExecutionResult MergeScriptResults(ScriptExecutionResult? pre, ScriptExecutionResult post)
+    {
+        if (pre == null) return post;
+        
+        var merged = new ScriptExecutionResult
+        {
+            IsSuccess = pre.IsSuccess && post.IsSuccess,
+            ErrorMessage = post.ErrorMessage ?? pre.ErrorMessage,
+            ErrorLine = post.ErrorLine > 0 ? post.ErrorLine : pre.ErrorLine,
+            Logs = pre.Logs.Concat(post.Logs).ToList(),
+            TestResults = pre.TestResults.Concat(post.TestResults).ToList(),
+            TotalDuration = pre.TotalDuration + post.TotalDuration
+        };
+        return merged;
     }
 
     public async ValueTask SendGraphQLRequest(CancellationToken ct)

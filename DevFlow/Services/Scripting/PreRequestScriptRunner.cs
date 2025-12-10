@@ -360,6 +360,40 @@ public class ExpectChain
         }
         return this;
     }
+
+    public ExpectChain toBeInRange(double min, double max)
+    {
+        var actual = Convert.ToDouble(_actual);
+        var inRange = actual >= min && actual <= max;
+        if (_negated) inRange = !inRange;
+
+        if (!inRange)
+        {
+            throw new AssertionException(
+                _negated ? $"Expected {actual} to not be in range [{min}, {max}]" : $"Expected {actual} to be in range [{min}, {max}]",
+                $"[{min}, {max}]",
+                actual.ToString()
+            );
+        }
+        return this;
+    }
+
+    public ExpectChain toBeType(string expectedType)
+    {
+        var actualType = _actual?.GetType().Name.ToLower() ?? "null";
+        var isType = actualType.Equals(expectedType.ToLower(), StringComparison.OrdinalIgnoreCase);
+        if (_negated) isType = !isType;
+
+        if (!isType)
+        {
+            throw new AssertionException(
+                _negated ? $"Expected type to not be {expectedType}" : $"Expected type {expectedType} but got {actualType}",
+                expectedType,
+                actualType
+            );
+        }
+        return this;
+    }
 }
 
 public class AssertionException : Exception

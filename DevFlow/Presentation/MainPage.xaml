@@ -1195,12 +1195,8 @@
 
             <!-- Post-request Script Tab Panel (Index 5) -->
             <Grid x:Name="PostScriptPanel" Visibility="Collapsed">
-              <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
-                <TextBlock Text="Post-request script coming soon..."
-                           Foreground="{StaticResource TextMutedBrush}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           FontSize="14" />
-              </Border>
+              <controls:PostScriptEditorControl x:Name="PostRequestScriptEditor" 
+                                                ScriptText="{Binding PostRequestScript, Mode=TwoWay}" />
             </Grid>
           </Grid>
 

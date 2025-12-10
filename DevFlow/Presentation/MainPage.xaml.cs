@@ -54,7 +54,17 @@ public sealed partial class MainPage : Page
         // Subscribe to script execution events
         if (PreRequestScriptEditor != null)
         {
-            PreRequestScriptEditor.ScriptExecuted += OnPreRequestScriptExecuted;
+            PreRequestScriptEditor.ScriptExecuted += OnScriptExecuted;
+        }
+        if (PostRequestScriptEditor != null)
+        {
+            PostRequestScriptEditor.ScriptExecuted += OnScriptExecuted;
+        }
+        
+        // Subscribe to model's ScriptExecuted event (for combined results after request)
+        if (DataContext is MainModel model)
+        {
+            model.ScriptExecuted += OnScriptExecuted;
         }
         
         // Register for text binding updates
@@ -414,7 +424,7 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private void OnPreRequestScriptExecuted(object? sender, ScriptExecutionResult result)
+    private void OnScriptExecuted(object? sender, ScriptExecutionResult result)
     {
         _lastScriptResult = result;
         UpdateTestResults(result);
