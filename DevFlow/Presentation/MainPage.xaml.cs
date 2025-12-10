@@ -66,6 +66,68 @@ public sealed partial class MainPage : Page
                 UpdateRawLineNumbers();
             });
         }
+
+        // Register for GraphQL response body updates
+        if (GQLResponseRawText != null)
+        {
+            GQLResponseRawText.RegisterPropertyChangedCallback(TextBlock.TextProperty, (s, dp) =>
+            {
+                var body = GQLResponseRawText.Text ?? string.Empty;
+                _gqlResponseBody = body;
+                
+                // Update JSON highlighting
+                if (GQLResponseHighlightBlock != null)
+                {
+                    try
+                    {
+                        JsonSyntaxHighlighter.ApplyHighlighting(GQLResponseHighlightBlock, body);
+                    }
+                    catch
+                    {
+                        GQLResponseHighlightBlock.Text = body;
+                    }
+                }
+                
+                UpdateGQLResponseLineNumbers();
+            });
+        }
+
+        // Register for REST status changes to update badge color
+        if (ResponseStatusText != null)
+        {
+            ResponseStatusText.RegisterPropertyChangedCallback(TextBlock.TextProperty, (s, dp) =>
+            {
+                UpdateStatusBadgeColor(StatusBadge, ResponseStatusText.Text);
+            });
+        }
+
+        // Register for GraphQL status changes to update badge color
+        if (GQLResponseStatusText != null)
+        {
+            GQLResponseStatusText.RegisterPropertyChangedCallback(TextBlock.TextProperty, (s, dp) =>
+            {
+                UpdateStatusBadgeColor(GQLStatusBadge, GQLResponseStatusText.Text);
+            });
+        }
+    }
+
+    private void UpdateStatusBadgeColor(Border? badge, string? statusText)
+    {
+        if (badge == null || string.IsNullOrEmpty(statusText)) return;
+
+        Brush brush;
+        if (statusText.StartsWith("2"))
+            brush = (Brush)Application.Current.Resources["SuccessBrush"];
+        else if (statusText.StartsWith("3"))
+            brush = (Brush)Application.Current.Resources["InfoBrush"];
+        else if (statusText.StartsWith("4"))
+            brush = (Brush)Application.Current.Resources["WarningBrush"];
+        else if (statusText.StartsWith("5") || statusText.Contains("failed", StringComparison.OrdinalIgnoreCase))
+            brush = (Brush)Application.Current.Resources["ErrorBrush"];
+        else
+            brush = (Brush)Application.Current.Resources["TextMutedBrush"];
+
+        badge.Background = brush;
     }
 
     private ObservableCollection<RequestParameter>? GetParameters()
@@ -735,54 +797,6 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private void GQLRunRequest_Click(object sender, RoutedEventArgs e)
-    {
-        // TODO: Implement GraphQL request execution
-        // For now, show a placeholder response
-        if (GQLProgressRing != null)
-            GQLProgressRing.IsActive = true;
-
-        _ = Task.Delay(500).ContinueWith(_ =>
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                if (GQLProgressRing != null)
-                    GQLProgressRing.IsActive = false;
-
-                _gqlResponseBody = "{\n  \"data\": {\n    \"method\": \"POST\",\n    \"url\": \"https://echo.hoppscotch.io/graphql\"\n  }\n}";
-                
-                if (GQLResponseHighlightBlock != null)
-                {
-                    try
-                    {
-                        JsonSyntaxHighlighter.ApplyHighlighting(GQLResponseHighlightBlock, _gqlResponseBody);
-                    }
-                    catch
-                    {
-                        GQLResponseHighlightBlock.Text = _gqlResponseBody;
-                    }
-                }
-                
-                if (GQLResponseRawText != null)
-                    GQLResponseRawText.Text = _gqlResponseBody;
-                
-                if (GQLResponseStatusText != null)
-                    GQLResponseStatusText.Text = "200 OK";
-                
-                if (GQLStatusBadge != null)
-                    GQLStatusBadge.Background = (Brush)Application.Current.Resources["SuccessBrush"];
-                
-                if (GQLResponseTimeText != null)
-                    GQLResponseTimeText.Text = "42 ms";
-                
-                if (GQLResponseSizeText != null)
-                    GQLResponseSizeText.Text = "0.15 KB";
-                
-                UpdateGQLResponseLineNumbers();
-            });
-        });
-    }
-
     private void UpdateGQLResponseLineNumbers()
     {
         var lineCount = string.IsNullOrEmpty(_gqlResponseBody) ? 1 : _gqlResponseBody.Split('\n').Length;
@@ -886,24 +900,109 @@ public sealed partial class MainPage : Page
     {
         if (sender is ComboBox comboBox && comboBox.SelectedItem is AuthTypeOption selectedType)
         {
+            var tabManager = GetGraphQLTabManager();
+            if (tabManager?.ActiveTab?.Authorization != null)
+            {
+                tabManager.ActiveTab.Authorization.AuthType = selectedType.Type;
+                tabManager.ActiveTab.Authorization.IsEnabled = selectedType.Type != AuthorizationType.None;
+            }
             SwitchToGQLAuthPanel(selectedType.Type);
         }
     }
 
     private void SwitchToGQLAuthPanel(AuthorizationType authType)
     {
-        if (GQLAuthNonePanel == null || GQLAuthBearerPanel == null) return;
+        if (GQLAuthNonePanel == null) return;
 
         GQLAuthNonePanel.Visibility = authType == AuthorizationType.None ? Visibility.Visible : Visibility.Collapsed;
-        GQLAuthBearerPanel.Visibility = authType == AuthorizationType.BearerToken ? Visibility.Visible : Visibility.Collapsed;
+        if (GQLAuthBasicPanel != null)
+            GQLAuthBasicPanel.Visibility = authType == AuthorizationType.BasicAuth ? Visibility.Visible : Visibility.Collapsed;
+        if (GQLAuthBearerPanel != null)
+            GQLAuthBearerPanel.Visibility = authType == AuthorizationType.BearerToken ? Visibility.Visible : Visibility.Collapsed;
+        if (GQLAuthApiKeyPanel != null)
+            GQLAuthApiKeyPanel.Visibility = authType == AuthorizationType.ApiKey ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void GQLBasicAuth_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var tabManager = GetGraphQLTabManager();
+        if (tabManager?.ActiveTab?.Authorization != null && GQLBasicUsernameInput != null)
+        {
+            tabManager.ActiveTab.Authorization.Username = GQLBasicUsernameInput.Text;
+        }
+    }
+
+    private void GQLBasicAuth_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        var tabManager = GetGraphQLTabManager();
+        if (tabManager?.ActiveTab?.Authorization != null && GQLBasicPasswordInput != null)
+        {
+            tabManager.ActiveTab.Authorization.Password = GQLBasicPasswordInput.Password;
+        }
+    }
+
+    private void GQLBearerToken_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var tabManager = GetGraphQLTabManager();
+        if (tabManager?.ActiveTab?.Authorization != null && GQLBearerTokenInput != null)
+        {
+            tabManager.ActiveTab.Authorization.BearerToken = GQLBearerTokenInput.Text;
+        }
+    }
+
+    private void GQLApiKey_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var tabManager = GetGraphQLTabManager();
+        if (tabManager?.ActiveTab?.Authorization != null)
+        {
+            if (GQLApiKeyNameInput != null)
+                tabManager.ActiveTab.Authorization.ApiKeyName = GQLApiKeyNameInput.Text;
+            if (GQLApiKeyValueInput != null)
+                tabManager.ActiveTab.Authorization.ApiKeyValue = GQLApiKeyValueInput.Text;
+        }
+    }
+
+    private void GQLApiKeyLocation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is ApiKeyLocationOption option)
+        {
+            var tabManager = GetGraphQLTabManager();
+            if (tabManager?.ActiveTab?.Authorization != null)
+            {
+                tabManager.ActiveTab.Authorization.ApiKeyLocation = option.Location;
+            }
+        }
     }
 
     private void GQLClearAuth_Click(object sender, RoutedEventArgs e)
     {
+        var tabManager = GetGraphQLTabManager();
+        if (tabManager?.ActiveTab?.Authorization != null)
+        {
+            var auth = tabManager.ActiveTab.Authorization;
+            auth.AuthType = AuthorizationType.None;
+            auth.IsEnabled = false;
+            auth.Username = string.Empty;
+            auth.Password = string.Empty;
+            auth.BearerToken = string.Empty;
+            auth.ApiKeyName = string.Empty;
+            auth.ApiKeyValue = string.Empty;
+        }
+        
+        if (GQLBasicUsernameInput != null)
+            GQLBasicUsernameInput.Text = string.Empty;
+        if (GQLBasicPasswordInput != null)
+            GQLBasicPasswordInput.Password = string.Empty;
         if (GQLBearerTokenInput != null)
             GQLBearerTokenInput.Text = string.Empty;
+        if (GQLApiKeyNameInput != null)
+            GQLApiKeyNameInput.Text = string.Empty;
+        if (GQLApiKeyValueInput != null)
+            GQLApiKeyValueInput.Text = string.Empty;
         if (GQLAuthTypeComboBox != null)
             GQLAuthTypeComboBox.SelectedIndex = 0;
+        if (GQLApiKeyLocationComboBox != null)
+            GQLApiKeyLocationComboBox.SelectedIndex = 0;
     }
 
     private void GQLResponseTab_Click(object sender, RoutedEventArgs e)
@@ -918,16 +1017,20 @@ public sealed partial class MainPage : Page
     {
         if (tabIndex == _gqlCurrentResponseTabIndex) return;
 
-        var tabButtons = new Button[] { GQLResponseTabJson, GQLResponseTabRaw, GQLResponseTabErrors };
-        var tabPanels = new FrameworkElement[] { GQLResponseJsonPanel, GQLResponseRawPanel, GQLResponseErrorsPanel };
+        var tabButtons = new Button[] { GQLResponseTabJson, GQLResponseTabRaw, GQLResponseTabHeaders, GQLResponseTabErrors };
+        var tabPanels = new FrameworkElement[] { GQLResponseJsonPanel, GQLResponseRawPanel, GQLResponseHeadersPanel, GQLResponseErrorsPanel };
 
         for (int i = 0; i < tabButtons.Length; i++)
         {
-            tabButtons[i].Style = i == tabIndex
-                ? (Style)Resources["RequestTabActiveStyle"] ?? (Style)Application.Current.Resources["RequestTabActiveStyle"]
-                : (Style)Resources["RequestTabStyle"] ?? (Style)Application.Current.Resources["RequestTabStyle"];
+            if (tabButtons[i] != null)
+            {
+                tabButtons[i].Style = i == tabIndex
+                    ? (Style)Resources["RequestTabActiveStyle"] ?? (Style)Application.Current.Resources["RequestTabActiveStyle"]
+                    : (Style)Resources["RequestTabStyle"] ?? (Style)Application.Current.Resources["RequestTabStyle"];
+            }
 
-            tabPanels[i].Visibility = i == tabIndex ? Visibility.Visible : Visibility.Collapsed;
+            if (tabPanels[i] != null)
+                tabPanels[i].Visibility = i == tabIndex ? Visibility.Visible : Visibility.Collapsed;
         }
 
         _gqlCurrentResponseTabIndex = tabIndex;

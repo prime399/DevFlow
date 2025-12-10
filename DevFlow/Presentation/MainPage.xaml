@@ -1243,10 +1243,11 @@
                                FontSize="12"
                                VerticalAlignment="Center" />
                     <Border x:Name="StatusBadge"
-                            Background="{StaticResource SuccessBrush}"
+                            Background="{StaticResource TextMutedBrush}"
                             CornerRadius="4"
                             Padding="8,4">
-                      <TextBlock Text="{Binding ResponseStatus}"
+                      <TextBlock x:Name="ResponseStatusText"
+                                 Text="{Binding ResponseStatus}"
                                  Foreground="{StaticResource OverlayBrush}"
                                  FontFamily="{StaticResource AppFontFamilyBold}"
                                  FontSize="11" />
@@ -1706,14 +1707,14 @@
                                   Width="20"
                                   Height="20"
                                   Margin="8,0"
-                                  IsActive="False" />
+                                  IsActive="{Binding GQLIsSending}" />
                   </Grid>
                 </Border>
 
                 <!-- Run Request Button -->
                 <Button Grid.Column="2"
                         x:Name="GQLRunRequestButton"
-                        Click="GQLRunRequest_Click"
+                        Command="{Binding SendGraphQLRequest}"
                         Style="{StaticResource SendButtonStyle}"
                         Margin="8,0,4,0">
                   <StackPanel Orientation="Horizontal" Spacing="6">
@@ -2137,6 +2138,50 @@
                                  HorizontalAlignment="Center" />
                     </StackPanel>
                     
+                    <!-- Basic Auth Panel -->
+                    <StackPanel x:Name="GQLAuthBasicPanel" Visibility="Collapsed" Spacing="20" MaxWidth="600">
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Username"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <TextBox x:Name="GQLBasicUsernameInput"
+                                 PlaceholderText="Enter username"
+                                 Background="{StaticResource InputBackgroundBrush}"
+                                 BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 Padding="12,10"
+                                 TextChanged="GQLBasicAuth_TextChanged" />
+                      </StackPanel>
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Password"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <PasswordBox x:Name="GQLBasicPasswordInput"
+                                     PlaceholderText="Enter password"
+                                     Background="{StaticResource InputBackgroundBrush}"
+                                     BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource MonospaceFontFamily}"
+                                     Padding="12,10"
+                                     PasswordChanged="GQLBasicAuth_PasswordChanged" />
+                      </StackPanel>
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="6"
+                              Padding="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
+                          <TextBlock Text="Credentials will be Base64 encoded and sent in the Authorization header."
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                    
                     <!-- Bearer Token Panel -->
                     <StackPanel x:Name="GQLAuthBearerPanel" Visibility="Collapsed" Spacing="20" MaxWidth="600">
                       <StackPanel Spacing="8">
@@ -2153,7 +2198,8 @@
                                  Padding="12,10"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
-                                 MinHeight="80" />
+                                 MinHeight="80"
+                                 TextChanged="GQLBearerToken_TextChanged" />
                       </StackPanel>
                       <Border Background="{StaticResource SurfaceVariantBrush}"
                               CornerRadius="6"
@@ -2161,6 +2207,74 @@
                         <StackPanel Orientation="Horizontal" Spacing="8">
                           <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
                           <TextBlock Text="The token will be sent in the Authorization header."
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                    
+                    <!-- API Key Panel -->
+                    <StackPanel x:Name="GQLAuthApiKeyPanel" Visibility="Collapsed" Spacing="20" MaxWidth="600">
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Key Name"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <TextBox x:Name="GQLApiKeyNameInput"
+                                 PlaceholderText="e.g., X-API-Key, api_key"
+                                 Background="{StaticResource InputBackgroundBrush}"
+                                 BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 Padding="12,10"
+                                 TextChanged="GQLApiKey_TextChanged" />
+                      </StackPanel>
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Key Value"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <TextBox x:Name="GQLApiKeyValueInput"
+                                 PlaceholderText="Enter API key value"
+                                 Background="{StaticResource InputBackgroundBrush}"
+                                 BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 Padding="12,10"
+                                 TextChanged="GQLApiKey_TextChanged" />
+                      </StackPanel>
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Add To"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <ComboBox x:Name="GQLApiKeyLocationComboBox"
+                                  ItemsSource="{Binding ApiKeyLocations}"
+                                  SelectedIndex="0"
+                                  SelectionChanged="GQLApiKeyLocation_SelectionChanged"
+                                  MinWidth="200"
+                                  Background="{StaticResource MethodSelectorBgBrush}"
+                                  BorderThickness="1"
+                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                  Padding="12,8">
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                              <TextBlock Text="{Binding Name}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="13" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+                      </StackPanel>
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="6"
+                              Padding="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
+                          <TextBlock Text="API key will be added to the request header or query parameters."
                                      Foreground="{StaticResource TextSecondaryBrush}"
                                      FontFamily="{StaticResource AppFontFamily}"
                                      FontSize="12"
@@ -2221,7 +2335,7 @@
                               CornerRadius="4"
                               Padding="8,4">
                         <TextBlock x:Name="GQLResponseStatusText"
-                                   Text="Awaiting request"
+                                   Text="{Binding GQLResponseStatus}"
                                    Foreground="{StaticResource OverlayBrush}"
                                    FontFamily="{StaticResource AppFontFamilyBold}"
                                    FontSize="11" />
@@ -2234,7 +2348,7 @@
                                  FontSize="12"
                                  VerticalAlignment="Center" />
                       <TextBlock x:Name="GQLResponseTimeText"
-                                 Text="0 ms"
+                                 Text="{Binding GQLResponseTime}"
                                  Foreground="{StaticResource AccentPrimaryBrush}"
                                  FontFamily="{StaticResource MonospaceFontFamily}"
                                  FontSize="12"
@@ -2247,7 +2361,7 @@
                                  FontSize="12"
                                  VerticalAlignment="Center" />
                       <TextBlock x:Name="GQLResponseSizeText"
-                                 Text="0 KB"
+                                 Text="{Binding GQLResponseSize}"
                                  Foreground="{StaticResource AccentPrimaryBrush}"
                                  FontFamily="{StaticResource MonospaceFontFamily}"
                                  FontSize="12"
@@ -2274,9 +2388,14 @@
                               Tag="1"
                               Click="GQLResponseTab_Click"
                               Style="{StaticResource RequestTabStyle}" />
+                      <Button x:Name="GQLResponseTabHeaders"
+                              Content="Headers"
+                              Tag="2"
+                              Click="GQLResponseTab_Click"
+                              Style="{StaticResource RequestTabStyle}" />
                       <Button x:Name="GQLResponseTabErrors"
                               Content="Errors"
-                              Tag="2"
+                              Tag="3"
                               Click="GQLResponseTab_Click"
                               Style="{StaticResource RequestTabStyle}" />
                     </StackPanel>
@@ -2364,6 +2483,7 @@
                                   VerticalScrollBarVisibility="Auto"
                                   Padding="12,8">
                       <TextBlock x:Name="GQLResponseRawText"
+                                 Text="{Binding GQLResponseBody}"
                                  FontFamily="{StaticResource MonospaceFontFamily}"
                                  FontSize="12"
                                  Foreground="{StaticResource TextPrimaryBrush}"
@@ -2372,6 +2492,66 @@
                     </ScrollViewer>
                   </Grid>
 
+                  <!-- Headers View Panel -->
+                  <ScrollViewer x:Name="GQLResponseHeadersPanel" Visibility="Collapsed">
+                    <Grid RowDefinitions="Auto,*" Padding="0">
+                      <!-- Headers Table Header -->
+                      <Border Grid.Row="0"
+                              Background="{StaticResource SurfaceVariantBrush}"
+                              BorderBrush="{StaticResource RequestBarBorderBrush}"
+                              BorderThickness="0,0,0,1"
+                              Padding="0">
+                        <Grid ColumnDefinitions="*,2*">
+                          <Border Grid.Column="0"
+                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                  BorderThickness="0,0,1,0"
+                                  Padding="16,10">
+                            <TextBlock Text="Header"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontFamily="{StaticResource AppFontFamilySemiBold}"
+                                       FontSize="12" />
+                          </Border>
+                          <Border Grid.Column="1" Padding="16,10">
+                            <TextBlock Text="Value"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontFamily="{StaticResource AppFontFamilySemiBold}"
+                                       FontSize="12" />
+                          </Border>
+                        </Grid>
+                      </Border>
+                      <!-- Headers List -->
+                      <ItemsControl Grid.Row="1" x:Name="GQLResponseHeadersControl" ItemsSource="{Binding GQLResponseHeaders}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                    BorderThickness="0,0,0,1">
+                              <Grid ColumnDefinitions="*,2*">
+                                <Border Grid.Column="0"
+                                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                        BorderThickness="0,0,1,0"
+                                        Padding="16,10">
+                                  <TextBlock Text="{Binding Key}"
+                                             Foreground="{StaticResource AccentPrimaryBrush}"
+                                             FontFamily="{StaticResource MonospaceFontFamily}"
+                                             FontSize="12"
+                                             TextWrapping="Wrap" />
+                                </Border>
+                                <Border Grid.Column="1" Padding="16,10">
+                                  <TextBlock Text="{Binding Value}"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             FontFamily="{StaticResource MonospaceFontFamily}"
+                                             FontSize="12"
+                                             TextWrapping="Wrap"
+                                             IsTextSelectionEnabled="True" />
+                                </Border>
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Grid>
+                  </ScrollViewer>
                   <!-- Errors Panel -->
                   <Grid x:Name="GQLResponseErrorsPanel" Visibility="Collapsed">
                     <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
