@@ -637,16 +637,23 @@ public sealed partial class MainPage : Page
         if (args.SelectedItem is NavigationViewItem item)
         {
             var content = item.Content?.ToString();
+            RestContent.Visibility = Visibility.Collapsed;
+            GraphQLContent.Visibility = Visibility.Collapsed;
+            RealtimeContent.Visibility = Visibility.Collapsed;
+
             if (content == "REST")
             {
                 RestContent.Visibility = Visibility.Visible;
-                GraphQLContent.Visibility = Visibility.Collapsed;
             }
             else if (content == "GraphQL")
             {
-                RestContent.Visibility = Visibility.Collapsed;
                 GraphQLContent.Visibility = Visibility.Visible;
                 UpdateGQLQueryLineNumbers();
+            }
+            else if (content == "Realtime")
+            {
+                RealtimeContent.Visibility = Visibility.Visible;
+                UpdateRTMessageLineNumbers();
             }
         }
     }
@@ -1552,6 +1559,683 @@ public sealed partial class MainPage : Page
             if (OAuth2AccessToken != null) OAuth2AccessToken.Text = string.Empty;
             if (OAuth2TokenType != null) OAuth2TokenType.Text = "Bearer";
         }
+    }
+
+    #endregion
+
+    #region Realtime Event Handlers
+
+    private System.Net.WebSockets.ClientWebSocket? _webSocket;
+    private System.Threading.CancellationTokenSource? _webSocketCts;
+    private HttpClient? _sseClient;
+    private System.Threading.CancellationTokenSource? _sseCts;
+    private int _rtCurrentContentTab = 0;
+    private bool _rtIsResizing = false;
+    private double _rtStartY;
+    private double _rtStartHeight;
+    private Button[]? _rtProtocolButtons;
+    private Button[]? _rtContentTabButtons;
+    private FrameworkElement[]? _rtContentPanels;
+
+    private RealtimeTabManager? GetRealtimeTabManager()
+    {
+        var dc = DataContext;
+        if (dc == null) return null;
+        var prop = dc.GetType().GetProperty("RealtimeTabManager");
+        return prop?.GetValue(dc) as RealtimeTabManager;
+    }
+
+    private void RealtimeTab_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is RealtimeTab tab)
+        {
+            var manager = GetRealtimeTabManager();
+            manager?.SetActiveTab(tab);
+            UpdateRTMessageLineNumbers();
+        }
+    }
+
+    private void RealtimeTabName_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement tab rename dialog
+    }
+
+    private void CloseRealtimeTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is RealtimeTab tab)
+        {
+            var manager = GetRealtimeTabManager();
+            manager?.CloseTab(tab);
+        }
+    }
+
+    private void AddRealtimeTab_Click(object sender, RoutedEventArgs e)
+    {
+        var manager = GetRealtimeTabManager();
+        manager?.AddNewTab();
+        UpdateRTMessageLineNumbers();
+    }
+
+    private void RTProtocol_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string protocolTag)
+        {
+            _rtProtocolButtons ??= new Button[] { RTProtocolWebSocket, RTProtocolSSE, RTProtocolSocketIO };
+            
+            var protocol = protocolTag switch
+            {
+                "WebSocket" => RealtimeProtocol.WebSocket,
+                "SSE" => RealtimeProtocol.SSE,
+                "SocketIO" => RealtimeProtocol.SocketIO,
+                _ => RealtimeProtocol.WebSocket
+            };
+
+            var manager = GetRealtimeTabManager();
+            if (manager?.ActiveTab != null)
+            {
+                manager.ActiveTab.Protocol = protocol;
+            }
+
+            foreach (var btn in _rtProtocolButtons)
+            {
+                btn.Style = btn == button
+                    ? (Style)Application.Current.Resources["RequestTabActiveStyle"]
+                    : (Style)Application.Current.Resources["RequestTabStyle"];
+            }
+
+            // Update URL placeholder based on protocol
+            if (RealtimeUrlTextBox != null)
+            {
+                RealtimeUrlTextBox.PlaceholderText = protocol switch
+                {
+                    RealtimeProtocol.WebSocket => "wss://ws.postman-echo.com/raw",
+                    RealtimeProtocol.SSE => "https://stream.wikimedia.org/v2/stream/recentchange",
+                    RealtimeProtocol.SocketIO => "https://socket-io-chat.now.sh",
+                    _ => "wss://ws.postman-echo.com/raw"
+                };
+            }
+
+            // Show/hide send button for SSE (SSE is receive-only)
+            if (RTSendButton != null)
+            {
+                RTSendButton.Visibility = protocol == RealtimeProtocol.SSE ? Visibility.Collapsed : Visibility.Visible;
+            }
+        }
+    }
+
+    private void RTContentTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string tagStr && int.TryParse(tagStr, out int tabIndex))
+        {
+            _rtContentTabButtons ??= new Button[] { RTTabCommunication, RTTabProtocols };
+            _rtContentPanels ??= new FrameworkElement[] { RTCommunicationPanel, RTProtocolsPanel };
+
+            for (int i = 0; i < _rtContentTabButtons.Length; i++)
+            {
+                _rtContentTabButtons[i].Style = i == tabIndex
+                    ? (Style)Application.Current.Resources["RequestTabActiveStyle"]
+                    : (Style)Application.Current.Resources["RequestTabStyle"];
+                _rtContentPanels[i].Visibility = i == tabIndex ? Visibility.Visible : Visibility.Collapsed;
+            }
+            _rtCurrentContentTab = tabIndex;
+        }
+    }
+
+    private async void RTConnect_Click(object sender, RoutedEventArgs e)
+    {
+        var manager = GetRealtimeTabManager();
+        var tab = manager?.ActiveTab;
+        if (tab == null) return;
+
+        if (tab.IsConnected)
+        {
+            await DisconnectRealtimeAsync(tab);
+        }
+        else
+        {
+            await ConnectRealtimeAsync(tab);
+        }
+    }
+
+    private async Task ConnectRealtimeAsync(RealtimeTab tab)
+    {
+        try
+        {
+            RTProgressRing.Visibility = Visibility.Visible;
+            tab.AddLog(LogEntryType.Info, $"Connecting to {tab.Url}...");
+
+            switch (tab.Protocol)
+            {
+                case RealtimeProtocol.WebSocket:
+                    await ConnectWebSocketAsync(tab);
+                    break;
+                case RealtimeProtocol.SSE:
+                    await ConnectSSEAsync(tab);
+                    break;
+                case RealtimeProtocol.SocketIO:
+                    await ConnectSocketIOAsync(tab);
+                    break;
+            }
+
+            tab.IsConnected = true;
+            tab.AddLog(LogEntryType.Connected, $"Connected to {tab.Url}");
+            UpdateConnectButton(true);
+            RTSendButton.IsEnabled = tab.Protocol != RealtimeProtocol.SSE;
+        }
+        catch (Exception ex)
+        {
+            tab.AddLog(LogEntryType.Error, "Connection failed", ex.Message);
+            tab.IsConnected = false;
+            UpdateConnectButton(false);
+        }
+        finally
+        {
+            RTProgressRing.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private async Task ConnectWebSocketAsync(RealtimeTab tab)
+    {
+        _webSocketCts = new System.Threading.CancellationTokenSource();
+        _webSocket = new System.Net.WebSockets.ClientWebSocket();
+
+        var uri = new Uri(tab.Url);
+        await _webSocket.ConnectAsync(uri, _webSocketCts.Token);
+
+        _ = Task.Run(async () => await ReceiveWebSocketMessagesAsync(tab));
+    }
+
+    private async Task ReceiveWebSocketMessagesAsync(RealtimeTab tab)
+    {
+        var buffer = new byte[4096];
+        var messageBuffer = new System.Text.StringBuilder();
+
+        try
+        {
+            while (_webSocket?.State == System.Net.WebSockets.WebSocketState.Open)
+            {
+                var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _webSocketCts!.Token);
+
+                if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Close)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        tab.AddLog(LogEntryType.Disconnected, $"Disconnected from {tab.Url}");
+                        tab.IsConnected = false;
+                        UpdateConnectButton(false);
+                        RTSendButton.IsEnabled = false;
+                    });
+                    break;
+                }
+
+                var messageChunk = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
+                messageBuffer.Append(messageChunk);
+
+                if (result.EndOfMessage)
+                {
+                    var message = messageBuffer.ToString();
+                    messageBuffer.Clear();
+                    var formattedMessage = FormatJsonIfPossible(message);
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        tab.AddLog(LogEntryType.Received, TruncateMessage(message), formattedMessage);
+                    });
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal cancellation
+        }
+        catch (Exception ex)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                tab.AddLog(LogEntryType.Error, "WebSocket error", ex.Message);
+                tab.IsConnected = false;
+                UpdateConnectButton(false);
+            });
+        }
+    }
+
+    private async Task ConnectSSEAsync(RealtimeTab tab)
+    {
+        _sseCts = new System.Threading.CancellationTokenSource();
+        _sseClient = new HttpClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, tab.Url);
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
+
+        var response = await _sseClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, _sseCts.Token);
+        response.EnsureSuccessStatusCode();
+
+        _ = Task.Run(async () => await ReceiveSSEMessagesAsync(tab, response));
+    }
+
+    private async Task ReceiveSSEMessagesAsync(RealtimeTab tab, HttpResponseMessage response)
+    {
+        try
+        {
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new System.IO.StreamReader(stream);
+
+            while (!reader.EndOfStream && !_sseCts!.IsCancellationRequested)
+            {
+                var line = await reader.ReadLineAsync();
+                if (string.IsNullOrEmpty(line)) continue;
+
+                if (line.StartsWith("data:"))
+                {
+                    var data = line.Substring(5).Trim();
+                    var formattedData = FormatJsonIfPossible(data);
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        tab.AddLog(LogEntryType.Received, TruncateMessage(data), formattedData);
+                    });
+                }
+                else if (line.StartsWith("event:"))
+                {
+                    var eventName = line.Substring(6).Trim();
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        tab.AddLog(LogEntryType.Info, $"Event: {eventName}");
+                    });
+                }
+            }
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                tab.AddLog(LogEntryType.Disconnected, $"Disconnected from {tab.Url}");
+                tab.IsConnected = false;
+                UpdateConnectButton(false);
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal cancellation
+        }
+        catch (Exception ex)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                tab.AddLog(LogEntryType.Error, "SSE error", ex.Message);
+                tab.IsConnected = false;
+                UpdateConnectButton(false);
+            });
+        }
+    }
+
+    private async Task ConnectSocketIOAsync(RealtimeTab tab)
+    {
+        // Socket.IO uses WebSocket transport with special handshake
+        // For simplicity, we'll use the WebSocket transport directly
+        _webSocketCts = new System.Threading.CancellationTokenSource();
+        _webSocket = new System.Net.WebSockets.ClientWebSocket();
+
+        // Socket.IO handshake - get session ID
+        using var httpClient = new HttpClient();
+        var baseUrl = tab.Url.TrimEnd('/');
+        var handshakeUrl = $"{baseUrl}/socket.io/?EIO=4&transport=polling";
+        
+        try
+        {
+            var handshakeResponse = await httpClient.GetStringAsync(handshakeUrl);
+            // Parse the handshake response to get session ID
+            // Format: 0{"sid":"xxx","upgrades":["websocket"],"pingInterval":xxx,"pingTimeout":xxx}
+            if (handshakeResponse.StartsWith("0"))
+            {
+                var json = handshakeResponse.Substring(1);
+                using var doc = JsonDocument.Parse(json);
+                var sid = doc.RootElement.GetProperty("sid").GetString();
+
+                // Connect via WebSocket
+                var wsUrl = baseUrl.Replace("https://", "wss://").Replace("http://", "ws://");
+                var wsUri = new Uri($"{wsUrl}/socket.io/?EIO=4&transport=websocket&sid={sid}");
+                await _webSocket.ConnectAsync(wsUri, _webSocketCts.Token);
+
+                // Send upgrade probe
+                await SendWebSocketMessageAsync("2probe");
+                
+                // Start receiving
+                _ = Task.Run(async () => await ReceiveSocketIOMessagesAsync(tab));
+            }
+        }
+        catch (Exception)
+        {
+            // Fallback to simple WebSocket connection if Socket.IO handshake fails
+            var wsUrl = tab.Url.Replace("https://", "wss://").Replace("http://", "ws://");
+            if (!wsUrl.Contains("/socket.io"))
+            {
+                wsUrl = $"{wsUrl.TrimEnd('/')}/socket.io/?EIO=4&transport=websocket";
+            }
+            await _webSocket.ConnectAsync(new Uri(wsUrl), _webSocketCts.Token);
+            _ = Task.Run(async () => await ReceiveSocketIOMessagesAsync(tab));
+        }
+    }
+
+    private async Task ReceiveSocketIOMessagesAsync(RealtimeTab tab)
+    {
+        var buffer = new byte[4096];
+
+        try
+        {
+            while (_webSocket?.State == System.Net.WebSockets.WebSocketState.Open)
+            {
+                var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _webSocketCts!.Token);
+
+                if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Close)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        tab.AddLog(LogEntryType.Disconnected, $"Disconnected from {tab.Url}");
+                        tab.IsConnected = false;
+                        UpdateConnectButton(false);
+                        RTSendButton.IsEnabled = false;
+                    });
+                    break;
+                }
+
+                var message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
+                
+                // Handle Socket.IO protocol messages
+                if (message == "3probe")
+                {
+                    // Respond to probe with upgrade
+                    await SendWebSocketMessageAsync("5");
+                    continue;
+                }
+                
+                if (message.StartsWith("42")) // Socket.IO message
+                {
+                    var payload = message.Substring(2);
+                    var formattedPayload = FormatJsonIfPossible(payload);
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        tab.AddLog(LogEntryType.Received, TruncateMessage(payload), formattedPayload);
+                    });
+                }
+                else if (message == "2") // Ping
+                {
+                    await SendWebSocketMessageAsync("3"); // Pong
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal cancellation
+        }
+        catch (Exception ex)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                tab.AddLog(LogEntryType.Error, "Socket.IO error", ex.Message);
+                tab.IsConnected = false;
+                UpdateConnectButton(false);
+            });
+        }
+    }
+
+    private async Task DisconnectRealtimeAsync(RealtimeTab tab)
+    {
+        try
+        {
+            if (_webSocket?.State == System.Net.WebSockets.WebSocketState.Open)
+            {
+                await _webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Disconnecting", CancellationToken.None);
+            }
+            _webSocketCts?.Cancel();
+            _webSocket?.Dispose();
+            _webSocket = null;
+
+            _sseCts?.Cancel();
+            _sseClient?.Dispose();
+            _sseClient = null;
+
+            tab.IsConnected = false;
+            tab.AddLog(LogEntryType.Disconnected, $"Disconnected from {tab.Url}");
+            UpdateConnectButton(false);
+            RTSendButton.IsEnabled = false;
+        }
+        catch (Exception ex)
+        {
+            tab.AddLog(LogEntryType.Error, "Disconnect error", ex.Message);
+        }
+    }
+
+    private void UpdateConnectButton(bool isConnected)
+    {
+        if (RTConnectButtonText != null)
+        {
+            RTConnectButtonText.Text = isConnected ? "Disconnect" : "Connect";
+        }
+        if (RTConnectButton != null)
+        {
+            RTConnectButton.Style = isConnected 
+                ? (Style)Application.Current.Resources["DisconnectButtonStyle"]
+                : (Style)Application.Current.Resources["ConnectButtonStyle"];
+        }
+    }
+
+    private async void RTSend_Click(object sender, RoutedEventArgs e)
+    {
+        var manager = GetRealtimeTabManager();
+        var tab = manager?.ActiveTab;
+        if (tab == null || !tab.IsConnected) return;
+
+        var message = RTMessageTextBox?.Text ?? string.Empty;
+        if (string.IsNullOrEmpty(message)) return;
+
+        try
+        {
+            switch (tab.Protocol)
+            {
+                case RealtimeProtocol.WebSocket:
+                    await SendWebSocketMessageAsync(message);
+                    break;
+                case RealtimeProtocol.SocketIO:
+                    // Socket.IO message format: 42["event",data]
+                    var socketIOMessage = $"42{message}";
+                    await SendWebSocketMessageAsync(socketIOMessage);
+                    break;
+            }
+
+            tab.AddLog(LogEntryType.Sent, TruncateMessage(message), FormatJsonIfPossible(message));
+        }
+        catch (Exception ex)
+        {
+            tab.AddLog(LogEntryType.Error, "Send failed", ex.Message);
+        }
+    }
+
+    private async Task SendWebSocketMessageAsync(string message)
+    {
+        if (_webSocket?.State != System.Net.WebSockets.WebSocketState.Open) return;
+
+        var bytes = System.Text.Encoding.UTF8.GetBytes(message);
+        await _webSocket.SendAsync(new ArraySegment<byte>(bytes), System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+
+    private void RTClearInput_Click(object sender, RoutedEventArgs e)
+    {
+        if (RTMessageTextBox != null)
+        {
+            RTMessageTextBox.Text = string.Empty;
+        }
+    }
+
+    private void RTMessageTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateRTMessageLineNumbers();
+    }
+
+    private void UpdateRTMessageLineNumbers()
+    {
+        var text = RTMessageTextBox?.Text ?? string.Empty;
+        var lineCount = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+
+        if (RTMessageLineNumbers != null)
+        {
+            var lineNumbers = new List<string>();
+            for (int i = 1; i <= lineCount; i++)
+            {
+                lineNumbers.Add(i.ToString());
+            }
+            RTMessageLineNumbers.ItemsSource = lineNumbers;
+        }
+    }
+
+    private void RTFormatJson_Click(object sender, RoutedEventArgs e)
+    {
+        if (RTMessageTextBox == null) return;
+
+        try
+        {
+            var text = RTMessageTextBox.Text;
+            if (string.IsNullOrWhiteSpace(text)) return;
+
+            using var doc = JsonDocument.Parse(text);
+            var formatted = JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+            RTMessageTextBox.Text = formatted;
+        }
+        catch (JsonException)
+        {
+            // Invalid JSON, don't format
+        }
+    }
+
+    private void RTCopyMessage_Click(object sender, RoutedEventArgs e)
+    {
+        if (RTMessageTextBox?.Text != null)
+        {
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(RTMessageTextBox.Text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
+    }
+
+    private void RTImport_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement import from file
+    }
+
+    private void RTAddProtocol_Click(object sender, RoutedEventArgs e)
+    {
+        var manager = GetRealtimeTabManager();
+        var tab = manager?.ActiveTab;
+        if (tab != null)
+        {
+            tab.Protocols.Add($"protocol-{tab.Protocols.Count + 1}");
+        }
+    }
+
+    private void RTSplitter_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _rtIsResizing = true;
+        _rtStartY = e.GetCurrentPoint(null).Position.Y;
+        if (sender is Border splitter)
+        {
+            splitter.CapturePointer(e.Pointer);
+        }
+    }
+
+    private void RTSplitter_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_rtIsResizing) return;
+
+        var currentY = e.GetCurrentPoint(null).Position.Y;
+        var delta = currentY - _rtStartY;
+        _rtStartY = currentY;
+
+        // Adjust the row heights (Communication section is row 0, Log section is row 2)
+        // This is a simplified version - you may need to adjust based on actual grid structure
+    }
+
+    private void RTSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        _rtIsResizing = false;
+        if (sender is Border splitter)
+        {
+            splitter.ReleasePointerCapture(e.Pointer);
+        }
+    }
+
+    private void RTScrollToTop_Click(object sender, RoutedEventArgs e)
+    {
+        RTLogScrollViewer?.ChangeView(null, 0, null);
+    }
+
+    private void RTScrollToBottom_Click(object sender, RoutedEventArgs e)
+    {
+        RTLogScrollViewer?.ChangeView(null, RTLogScrollViewer.ScrollableHeight, null);
+    }
+
+    private void RTCopyLogs_Click(object sender, RoutedEventArgs e)
+    {
+        var manager = GetRealtimeTabManager();
+        var tab = manager?.ActiveTab;
+        if (tab?.Logs == null) return;
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var log in tab.Logs)
+        {
+            sb.AppendLine($"[{log.TimestampFormatted}] {log.Type}: {log.Message}");
+            if (log.HasDetails)
+            {
+                sb.AppendLine($"  Details: {log.Details}");
+            }
+        }
+
+        var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+        dataPackage.SetText(sb.ToString());
+        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+    }
+
+    private void RTClearLogs_Click(object sender, RoutedEventArgs e)
+    {
+        var manager = GetRealtimeTabManager();
+        var tab = manager?.ActiveTab;
+        tab?.ClearLogs();
+    }
+
+    private void RTLogEntry_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Grid grid && grid.DataContext is RealtimeLogEntry log && log.HasDetails)
+        {
+            log.IsExpanded = !log.IsExpanded;
+        }
+    }
+
+    private void RTLogEntryExpand_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is RealtimeLogEntry log)
+        {
+            log.IsExpanded = !log.IsExpanded;
+        }
+    }
+
+    private string FormatJsonIfPossible(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return text;
+
+        var trimmed = text.TrimStart();
+        if (!trimmed.StartsWith('{') && !trimmed.StartsWith('[')) return text;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(text);
+            return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (JsonException)
+        {
+            return text;
+        }
+    }
+
+    private string TruncateMessage(string message, int maxLength = 80)
+    {
+        if (string.IsNullOrEmpty(message)) return message;
+        if (message.Length <= maxLength) return message;
+        return message.Substring(0, maxLength) + "...";
     }
 
     #endregion

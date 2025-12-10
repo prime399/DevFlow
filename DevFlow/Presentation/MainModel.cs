@@ -50,6 +50,9 @@ public partial record MainModel
     // GraphQL Tab Management
     public GraphQLTabManager GraphQLTabManager { get; } = new GraphQLTabManager();
     
+    // Realtime Tab Management
+    public RealtimeTabManager RealtimeTabManager { get; } = new RealtimeTabManager();
+    
     // Active tab's authorization (for convenience binding)
     public AuthorizationConfig Authorization => TabManager.ActiveTab?.Authorization ?? new AuthorizationConfig();
 
