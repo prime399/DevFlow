@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace DevFlow.Models;
 
-public class RequestParameter : INotifyPropertyChanged
+public class RequestParameter : IKeyValueItem
 {
     private Guid _id;
     private bool _isEnabled;
@@ -29,11 +29,7 @@ public class RequestParameter : INotifyPropertyChanged
         _description = description;
     }
 
-    public Guid Id
-    {
-        get => _id;
-        set => SetProperty(ref _id, value);
-    }
+    public Guid Id => _id;
 
     public bool IsEnabled
     {
@@ -44,19 +40,40 @@ public class RequestParameter : INotifyPropertyChanged
     public string ParamKey
     {
         get => _paramKey;
-        set => SetProperty(ref _paramKey, value);
+        set
+        {
+            if (SetProperty(ref _paramKey, value))
+                OnPropertyChanged(nameof(Key));
+        }
     }
 
     public string ParamValue
     {
         get => _paramValue;
-        set => SetProperty(ref _paramValue, value);
+        set
+        {
+            if (SetProperty(ref _paramValue, value))
+                OnPropertyChanged(nameof(Value));
+        }
     }
 
     public string Description
     {
         get => _description;
         set => SetProperty(ref _description, value);
+    }
+
+    // Public Key/Value for unified binding (delegates to ParamKey/ParamValue)
+    public string Key
+    {
+        get => ParamKey;
+        set => ParamKey = value;
+    }
+
+    public string Value
+    {
+        get => ParamValue;
+        set => ParamValue = value;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

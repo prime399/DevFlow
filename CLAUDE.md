@@ -57,19 +57,41 @@ DevFlow/
 │   ├── DevFlow.csproj
 │   ├── App.xaml                  # Resource dictionaries merged here
 │   ├── App.xaml.cs               # DI, navigation, HTTP client config
-│   ├── Presentation/             # Pages + MVUX Models
-│   │   └── MainPage.xaml         # Main API client UI (Hoppscotch-style)
-│   ├── Models/                   # Configuration models
-│   ├── Services/                 # API client services
+│   ├── Controls/                 # Reusable UI controls
+│   │   ├── KeyValueEditorControl.xaml/.cs    # Parameters/Headers table editor
+│   │   ├── CodeEditorControl.xaml/.cs        # Code editor with line numbers
+│   │   ├── ResponseViewerControl.xaml/.cs    # Response display with tabs
+│   │   └── AuthorizationEditorControl.xaml/.cs # Auth configuration panel
+│   ├── Presentation/
+│   │   ├── MainPage.xaml/.cs     # Main API client UI (monolithic, legacy)
+│   │   ├── MainPageModular.xaml/.cs # Modular shell using section controls
+│   │   ├── Controls/             # Feature-specific section controls
+│   │   │   ├── RestRequestView.xaml/.cs      # Complete REST UI section
+│   │   │   ├── GraphQLRequestView.xaml/.cs   # Complete GraphQL UI section
+│   │   │   └── RealtimeView.xaml/.cs         # Complete Realtime UI section
+│   │   └── ViewModels/           # Feature-specific ViewModels
+│   │       ├── RestRequestViewModel.cs       # REST request logic + state
+│   │       ├── GraphQLViewModel.cs           # GraphQL request logic + state
+│   │       └── RealtimeViewModel.cs          # Realtime connection logic
+│   ├── Models/                   # Data models and interfaces
+│   │   ├── IKeyValueItem.cs      # Unified interface for key-value items
+│   │   ├── RequestParameter.cs   # URL parameters (implements IKeyValueItem)
+│   │   ├── RequestHeader.cs      # HTTP headers (implements IKeyValueItem)
+│   │   └── ...
+│   ├── Services/
+│   │   ├── Realtime/             # Realtime connection services
+│   │   │   ├── IRealtimeConnectionService.cs # Connection abstraction
+│   │   │   ├── WebSocketConnectionService.cs # WebSocket implementation
+│   │   │   └── SSEConnectionService.cs       # Server-Sent Events implementation
+│   │   └── ...
 │   ├── Assets/
 │   │   └── Fonts/                # Custom fonts (Inter, JetBrains Mono)
 │   ├── Styles/                   # XAML styles and themes
-│   │   ├── AppTheme.xaml         # Unified color definitions + fonts (Catppuccin Mocha)
+│   │   ├── AppTheme.xaml         # Unified color definitions + fonts
 │   │   ├── Icons.xaml            # Fluent icon glyph definitions
-│   │   ├── NavigationStyles.xaml # NavigationView and toggle button styles
+│   │   ├── NavigationStyles.xaml # NavigationView styles
 │   │   ├── RequestBuilderStyles.xaml # API request UI styles
-│   │   ├── ColorPaletteOverride.xaml # Material theme color overrides
-│   │   └── ColorPaletteOverride.json
+│   │   └── ColorPaletteOverride.xaml/.json
 │   └── appsettings.json          # API URL config
 ├── DevFlow.Api/                  # ASP.NET Core backend
 │   ├── DevFlow.Api.csproj
@@ -156,6 +178,102 @@ export DOTNET_MODIFIABLE_ASSEMBLIES=debug && dotnet run --project DevFlow/DevFlo
 **API Client:** `IDataItemService` interface with `HttpClient` implementation, configured via DI in `App.xaml.cs`.
 
 **CORS:** API configured to allow any origin for development (restrict in production).
+
+### Modular Architecture
+
+The app uses a **layered modular architecture** for maintainability and testability:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MainPageModular (Shell)                  │
+│  ┌─────────────────┬─────────────────┬─────────────────┐   │
+│  │  RestRequestView│ GraphQLRequest  │   RealtimeView  │   │
+│  │  (Section)      │ View (Section)  │   (Section)     │   │
+│  └────────┬────────┴────────┬────────┴────────┬────────┘   │
+│           │                 │                 │             │
+│  ┌────────┴────────┬────────┴────────┬────────┴────────┐   │
+│  │ Reusable Controls: KeyValueEditor, CodeEditor,      │   │
+│  │ ResponseViewer, AuthorizationEditor                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+           │                 │                 │
+  ┌────────┴────────┬────────┴────────┬────────┴────────┐
+  │RestRequestVM    │ GraphQLVM       │ RealtimeVM      │
+  │(ViewModel)      │ (ViewModel)     │ (ViewModel)     │
+  └────────┬────────┴────────┬────────┴────────┬────────┘
+           │                 │                 │
+  ┌────────┴─────────────────┴─────────────────┴────────┐
+  │              Services Layer                         │
+  │  IHttpClientFactory, IRealtimeConnectionService     │
+  └─────────────────────────────────────────────────────┘
+```
+
+**Layer Responsibilities:**
+
+| Layer | Purpose | Examples |
+|-------|---------|----------|
+| **Shell** | Navigation, layout, section switching | `MainPageModular` |
+| **Section Controls** | Feature-complete UI for a domain | `RestRequestView`, `GraphQLRequestView`, `RealtimeView` |
+| **Reusable Controls** | Generic UI components used across sections | `KeyValueEditorControl`, `CodeEditorControl` |
+| **ViewModels** | Business logic, state management, HTTP calls | `RestRequestViewModel`, `GraphQLViewModel` |
+| **Services** | Infrastructure concerns, external connections | `WebSocketConnectionService`, `SSEConnectionService` |
+
+### Reusable Controls
+
+Located in `Controls/`, these are generic UI components:
+
+| Control | Purpose | Key Properties |
+|---------|---------|----------------|
+| `KeyValueEditorControl` | Table editor for key-value pairs | `ItemsSource`, `ItemType`, `Title` |
+| `CodeEditorControl` | Text editor with line numbers | `Text`, `PlaceholderText`, `IsReadOnly` |
+| `ResponseViewerControl` | Response display with JSON/Raw/Headers tabs | `ResponseBody`, `Status`, `ResponseHeaders` |
+| `AuthorizationEditorControl` | Auth type selector and config panels | `Authorization` |
+
+**Usage:**
+```xml
+<controls:KeyValueEditorControl 
+    Title="PARAMETERS"
+    ItemType="Parameter"
+    ItemsSource="{x:Bind ViewModel.Parameters, Mode=OneWay}" />
+```
+
+### IKeyValueItem Interface
+
+Unified interface for parameter/header items enabling control reuse:
+
+```csharp
+public interface IKeyValueItem : INotifyPropertyChanged
+{
+    Guid Id { get; }
+    bool IsEnabled { get; set; }
+    string Key { get; set; }      // Unified binding property
+    string Value { get; set; }    // Unified binding property
+    string Description { get; set; }
+}
+```
+
+Both `RequestParameter` and `RequestHeader` implement this interface, exposing `Key`/`Value` properties that delegate to their specific properties (`ParamKey`/`ParamValue` or `HeaderKey`/`HeaderValue`).
+
+### Service Abstraction Pattern
+
+Realtime connections use interface abstraction for testability:
+
+```csharp
+public interface IRealtimeConnectionService
+{
+    bool IsConnected { get; }
+    event EventHandler<string>? MessageReceived;
+    event EventHandler<string>? ErrorOccurred;
+    event EventHandler? Connected;
+    event EventHandler? Disconnected;
+    
+    Task ConnectAsync(string url, CancellationToken ct = default);
+    Task DisconnectAsync(CancellationToken ct = default);
+    Task SendMessageAsync(string message, CancellationToken ct = default);
+}
+```
+
+Implementations: `WebSocketConnectionService`, `SSEConnectionService`
 
 ### API Endpoints
 
@@ -264,6 +382,40 @@ API base URL configured in `DevFlow/appsettings.json`:
 - **Styles go in `Styles/`** - Never inline complex styles in page XAML
 - **Colors go in `AppTheme.xaml`** - Single source of truth
 - **Control styles go in specific files** - Navigation, RequestBuilder, etc.
+- **Reusable controls go in `Controls/`** - Generic UI components
+- **Section controls go in `Presentation/Controls/`** - Feature-specific composites
+- **ViewModels go in `Presentation/ViewModels/`** - One per feature/section
+- **Services go in `Services/`** - Infrastructure and external connections
+
+### Adding New Features
+
+When adding a new feature section (e.g., gRPC support):
+
+1. **Create ViewModel** in `Presentation/ViewModels/`:
+   ```csharp
+   public partial record GrpcViewModel
+   {
+       public IState<string> ServiceUrl => State<string>.Value(this, () => "");
+       // ... state and methods
+   }
+   ```
+
+2. **Create Section Control** in `Presentation/Controls/`:
+   - XAML: Compose reusable controls (`KeyValueEditorControl`, etc.)
+   - Code-behind: Wire up ViewModel via DependencyProperty
+
+3. **Reuse existing controls** where possible:
+   - `KeyValueEditorControl` for metadata/headers
+   - `CodeEditorControl` for request body
+   - `ResponseViewerControl` for response display
+   - `AuthorizationEditorControl` for auth config
+
+4. **Add to shell** in `MainPageModular.xaml`:
+   ```xml
+   <local:GrpcRequestView x:Name="GrpcView" Visibility="Collapsed" />
+   ```
+
+5. **Create service abstraction** if needed (in `Services/`).
 
 ## Troubleshooting
 

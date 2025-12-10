@@ -1,0 +1,52 @@
+<UserControl x:Class="DevFlow.Controls.CodeEditorControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DevFlow.Controls">
+    
+    <Border Background="{StaticResource RequestBarBackgroundBrush}">
+        <Grid ColumnDefinitions="Auto,*">
+            <!-- Line Numbers -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource SurfaceVariantBrush}"
+                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                    BorderThickness="0,0,1,0"
+                    MinWidth="48">
+                <ScrollViewer x:Name="LineNumbersScroller"
+                              VerticalScrollBarVisibility="Hidden"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="LineNumbersControl" Margin="0,12,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontFamily="{StaticResource MonospaceFontFamily}"
+                                           FontSize="13"
+                                           HorizontalAlignment="Right"
+                                           Padding="8,1,12,1" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+            
+            <!-- Code Editor -->
+            <ScrollViewer x:Name="ContentScroller"
+                          Grid.Column="1"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          ViewChanged="ContentScroller_ViewChanged">
+                <TextBox x:Name="EditorTextBox"
+                         AcceptsReturn="True"
+                         TextWrapping="NoWrap"
+                         Background="Transparent"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         FontFamily="{StaticResource MonospaceFontFamily}"
+                         FontSize="13"
+                         BorderThickness="0"
+                         Padding="12"
+                         MinHeight="200"
+                         TextChanged="EditorTextBox_TextChanged" />
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,91 @@
+<Page x:Class="DevFlow.Presentation.MainPageModular"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:controls="using:DevFlow.Presentation.Controls"
+      NavigationCacheMode="Required"
+      Background="{StaticResource AppBackgroundBrush}">
+
+    <Grid utu:SafeArea.Insets="VisibleBounds"
+          Background="{StaticResource AppBackgroundBrush}">
+        <NavigationView PaneDisplayMode="Left"
+                        IsBackButtonVisible="Collapsed"
+                        IsPaneOpen="True"
+                        OpenPaneLength="240"
+                        CompactPaneLength="64"
+                        IsSettingsVisible="False"
+                        PaneTitle="DevFlow API Lab"
+                        SelectionChanged="NavigationView_SelectionChanged">
+            <NavigationView.PaneToggleButtonStyle>
+                <StaticResource ResourceKey="AnimatedPaneToggleButtonStyle" />
+            </NavigationView.PaneToggleButtonStyle>
+            <NavigationView.MenuItemContainerStyle>
+                <StaticResource ResourceKey="AnimatedNavigationViewItemStyle" />
+            </NavigationView.MenuItemContainerStyle>
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="REST"
+                                    IsSelected="True"
+                                    x:Uid="MainPage.Nav.Rest">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="{StaticResource IconGlyphGlobe}" 
+                                  Foreground="{StaticResource SuccessBrush}"
+                                  VerticalAlignment="Center" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="GraphQL"
+                                    x:Uid="MainPage.Nav.GraphQL">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="{StaticResource IconGlyphGraph}" 
+                                  Foreground="{StaticResource SuccessBrush}"
+                                  VerticalAlignment="Center" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Realtime"
+                                    x:Uid="MainPage.Nav.Realtime">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="{StaticResource IconGlyphRealtime}" 
+                                  Foreground="{StaticResource SuccessBrush}"
+                                  VerticalAlignment="Center" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Settings"
+                                    x:Uid="MainPage.Nav.Settings">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="{StaticResource IconGlyphSettings}" 
+                                  Foreground="{StaticResource SuccessBrush}"
+                                  VerticalAlignment="Center" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.Content>
+                <Grid>
+                    <!-- REST Content -->
+                    <controls:RestRequestView x:Name="RestView" Visibility="Visible" />
+                    
+                    <!-- GraphQL Content -->
+                    <controls:GraphQLRequestView x:Name="GraphQLView" Visibility="Collapsed" />
+                    
+                    <!-- Realtime Content -->
+                    <controls:RealtimeView x:Name="RealtimeView" Visibility="Collapsed" />
+                    
+                    <!-- Settings Content -->
+                    <Grid x:Name="SettingsContent" Visibility="Collapsed">
+                        <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="24">
+                            <StackPanel Spacing="16">
+                                <TextBlock Text="Settings"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource AppFontFamilySemiBold}"
+                                           FontSize="24" />
+                                <TextBlock Text="Settings page coming soon..."
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontFamily="{StaticResource AppFontFamily}"
+                                           FontSize="14" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </NavigationView.Content>
+        </NavigationView>
+    </Grid>
+</Page>

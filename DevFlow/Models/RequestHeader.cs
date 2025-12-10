@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace DevFlow.Models;
 
-public class RequestHeader : INotifyPropertyChanged
+public class RequestHeader : IKeyValueItem
 {
     private Guid _id;
     private bool _isEnabled;
@@ -29,11 +29,7 @@ public class RequestHeader : INotifyPropertyChanged
         _description = description;
     }
 
-    public Guid Id
-    {
-        get => _id;
-        set => SetProperty(ref _id, value);
-    }
+    public Guid Id => _id;
 
     public bool IsEnabled
     {
@@ -44,19 +40,40 @@ public class RequestHeader : INotifyPropertyChanged
     public string HeaderKey
     {
         get => _headerKey;
-        set => SetProperty(ref _headerKey, value);
+        set
+        {
+            if (SetProperty(ref _headerKey, value))
+                OnPropertyChanged(nameof(Key));
+        }
     }
 
     public string HeaderValue
     {
         get => _headerValue;
-        set => SetProperty(ref _headerValue, value);
+        set
+        {
+            if (SetProperty(ref _headerValue, value))
+                OnPropertyChanged(nameof(Value));
+        }
     }
 
     public string Description
     {
         get => _description;
         set => SetProperty(ref _description, value);
+    }
+
+    // Public Key/Value for unified binding (delegates to HeaderKey/HeaderValue)
+    public string Key
+    {
+        get => HeaderKey;
+        set => HeaderKey = value;
+    }
+
+    public string Value
+    {
+        get => HeaderValue;
+        set => HeaderValue = value;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
