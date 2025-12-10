@@ -46,6 +46,9 @@ public partial record MainModel
     // Request Tab Management
     public RequestTabManager TabManager { get; } = new RequestTabManager();
     
+    // GraphQL Tab Management
+    public GraphQLTabManager GraphQLTabManager { get; } = new GraphQLTabManager();
+    
     // Active tab's authorization (for convenience binding)
     public AuthorizationConfig Authorization => TabManager.ActiveTab?.Authorization ?? new AuthorizationConfig();
 

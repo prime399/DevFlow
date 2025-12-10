@@ -39,7 +39,8 @@
                     OpenPaneLength="240"
                     CompactPaneLength="64"
                     IsSettingsVisible="False"
-                    PaneTitle="DevFlow API Lab">
+                    PaneTitle="DevFlow API Lab"
+                    SelectionChanged="NavigationView_SelectionChanged">
       <NavigationView.PaneToggleButtonStyle>
         <StaticResource ResourceKey="AnimatedPaneToggleButtonStyle" />
       </NavigationView.PaneToggleButtonStyle>
@@ -75,8 +76,9 @@
       </NavigationView.MenuItems>
 
       <NavigationView.Content>
-        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto" x:Name="MainContentGrid">
-          <!-- Request Tabs Bar -->
+        <Grid>
+          <Grid x:Name="RestContent" Visibility="Visible" RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+            <!-- Request Tabs Bar -->
           <Border Grid.Row="0"
                   Background="{StaticResource SurfaceVariantBrush}"
                   BorderBrush="{StaticResource RequestBarBorderBrush}"
@@ -1544,6 +1546,849 @@
               </Grid>
             </Grid>
           </Border>
+          </Grid>
+          
+          <Grid x:Name="GraphQLContent" Visibility="Collapsed" RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+            <!-- GraphQL Request Tabs Bar -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource SurfaceVariantBrush}"
+                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="0">
+              <Grid ColumnDefinitions="*,Auto">
+                <!-- Tabs ScrollViewer -->
+                <ScrollViewer Grid.Column="0"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled">
+                  <StackPanel Orientation="Horizontal">
+                    <ItemsControl x:Name="GraphQLTabsControl" ItemsSource="{Binding GraphQLTabManager.Tabs}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{Binding IsActive, Converter={StaticResource BoolToTabBackgroundConverter}}"
+                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                  BorderThickness="0,0,1,0"
+                                  MinWidth="120"
+                                  MaxWidth="200"
+                                  PointerPressed="GraphQLTab_PointerPressed">
+                            <Grid ColumnDefinitions="Auto,*,Auto" Height="36">
+                              <!-- GraphQL Badge -->
+                              <Border Grid.Column="0"
+                                      CornerRadius="3"
+                                      Padding="6,2"
+                                      Margin="8,0,4,0"
+                                      VerticalAlignment="Center">
+                                <TextBlock Text="GQL"
+                                           FontFamily="{StaticResource AppFontFamilyBold}"
+                                           FontSize="10"
+                                           Foreground="{StaticResource HttpGetBrush}" />
+                              </Border>
+                              
+                              <!-- Tab Name -->
+                              <Button Grid.Column="1"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Padding="4,2"
+                                      MinWidth="0"
+                                      MinHeight="0"
+                                      CornerRadius="3"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Center"
+                                      Click="GraphQLTabName_Click"
+                                      ToolTipService.ToolTip="Click to rename">
+                                <Button.Resources>
+                                  <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#313244" />
+                                  <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#3b3d4f" />
+                                </Button.Resources>
+                                <StackPanel Orientation="Horizontal" Spacing="3">
+                                  <TextBlock Text="{Binding Name}"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             FontFamily="{StaticResource AppFontFamily}"
+                                             FontSize="12"
+                                             TextTrimming="CharacterEllipsis"
+                                             MaxWidth="100"
+                                             VerticalAlignment="Center" />
+                                  <TextBlock Text="*"
+                                             Foreground="{StaticResource AccentPrimaryBrush}"
+                                             FontFamily="{StaticResource AppFontFamilyBold}"
+                                             FontSize="12"
+                                             Visibility="{Binding IsDirty}"
+                                             VerticalAlignment="Center" />
+                                </StackPanel>
+                              </Button>
+                              
+                              <!-- Close Button -->
+                              <Button Grid.Column="2"
+                                      Style="{StaticResource IconButtonStyle}"
+                                      Padding="4"
+                                      Margin="0,0,4,0"
+                                      VerticalAlignment="Center"
+                                      Click="CloseGraphQLTab_Click"
+                                      ToolTipService.ToolTip="Close tab">
+                                <FontIcon Glyph="&#xE8BB;" FontSize="10" Foreground="{StaticResource TextMutedBrush}" />
+                              </Button>
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    
+                    <!-- Add New Tab Button -->
+                    <Button Style="{StaticResource IconButtonStyle}"
+                            Click="AddGraphQLTab_Click"
+                            Margin="4,0,8,0"
+                            Padding="8"
+                            VerticalAlignment="Center"
+                            ToolTipService.ToolTip="New GraphQL request (Ctrl+T)">
+                      <FontIcon Glyph="{StaticResource IconGlyphAdd}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" />
+                    </Button>
+                  </StackPanel>
+                </ScrollViewer>
+                
+                <!-- Right side controls -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="8,0">
+                  <!-- Environment Selector -->
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          ToolTipService.ToolTip="Select environment">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <FontIcon Glyph="&#xE753;" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                      <TextBlock Text="Select environment"
+                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                 FontFamily="{StaticResource AppFontFamily}"
+                                 FontSize="12"
+                                 VerticalAlignment="Center" />
+                      <FontIcon Glyph="&#xE70D;" FontSize="10" Foreground="{StaticResource TextMutedBrush}" />
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <!-- GraphQL Endpoint Bar -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource RequestBarBackgroundBrush}"
+                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="8">
+              <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <!-- Protocol Badge -->
+                <Border Grid.Column="0"
+                        Background="{StaticResource MethodSelectorBgBrush}"
+                        CornerRadius="6,0,0,6"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="1,1,0,1"
+                        Padding="12,8">
+                  <TextBlock Text="GraphQL"
+                             Foreground="{StaticResource HttpGetBrush}"
+                             FontFamily="{StaticResource AppFontFamilyBold}"
+                             FontWeight="Bold"
+                             FontSize="14" />
+                </Border>
+
+                <!-- URL Input -->
+                <Border Grid.Column="1"
+                        Background="{StaticResource InputBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="0">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Grid.Column="0"
+                             x:Name="GraphQLEndpointTextBox"
+                             Text="{Binding GraphQLTabManager.ActiveTab.Endpoint, Mode=TwoWay}"
+                             PlaceholderText="https://api.example.com/graphql"
+                             Style="{StaticResource UrlTextBoxStyle}" />
+                    <ProgressRing Grid.Column="1"
+                                  x:Name="GQLProgressRing"
+                                  Width="20"
+                                  Height="20"
+                                  Margin="8,0"
+                                  IsActive="False" />
+                  </Grid>
+                </Border>
+
+                <!-- Run Request Button -->
+                <Button Grid.Column="2"
+                        x:Name="GQLRunRequestButton"
+                        Click="GQLRunRequest_Click"
+                        Style="{StaticResource SendButtonStyle}"
+                        Margin="8,0,4,0">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="{StaticResource IconGlyphPlay}" FontSize="12" />
+                    <TextBlock Text="Request" FontFamily="{StaticResource AppFontFamilyMedium}" />
+                  </StackPanel>
+                </Button>
+
+                <!-- Save Button -->
+                <Button Grid.Column="3"
+                        Style="{StaticResource SaveButtonStyle}"
+                        Margin="4,0,0,0">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="{StaticResource IconGlyphSave}" FontSize="14" />
+                    <TextBlock Text="Save" FontFamily="{StaticResource AppFontFamilyMedium}" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+            </Border>
+
+            <!-- GraphQL Tab Navigation Bar -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource TabBarBackgroundBrush}"
+                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                    BorderThickness="0,0,0,1">
+              <Grid ColumnDefinitions="*,Auto">
+                <!-- Left Tabs -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                  <Button x:Name="GQLTabQuery"
+                          Content="Query"
+                          Tag="0"
+                          Click="GQLTab_Click"
+                          Style="{StaticResource RequestTabActiveStyle}" />
+                  <Button x:Name="GQLTabVariables"
+                          Content="Variables"
+                          Tag="1"
+                          Click="GQLTab_Click"
+                          Style="{StaticResource RequestTabStyle}" />
+                  <Button x:Name="GQLTabHeaders"
+                          Content="Headers"
+                          Tag="2"
+                          Click="GQLTab_Click"
+                          Style="{StaticResource RequestTabStyle}" />
+                  <Button x:Name="GQLTabAuth"
+                          Content="Authorization"
+                          Tag="3"
+                          Click="GQLTab_Click"
+                          Style="{StaticResource RequestTabStyle}" />
+                </StackPanel>
+
+                <!-- Right side - Toolbar -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="4"
+                            Margin="0,0,12,0">
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          ToolTipService.ToolTip="History"
+                          Click="GQLHistory_Click">
+                    <FontIcon Glyph="{StaticResource IconGlyphHistory}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
+                  </Button>
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          ToolTipService.ToolTip="Copy query"
+                          Click="GQLCopyQuery_Click">
+                    <FontIcon Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
+                  </Button>
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          ToolTipService.ToolTip="Format query"
+                          Click="GQLFormatQuery_Click">
+                    <FontIcon Glyph="{StaticResource IconGlyphEdit}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
+                  </Button>
+                  <Border Width="1" Background="{StaticResource RequestBarBorderBrush}" Margin="4,8" />
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          ToolTipService.ToolTip="Schema Explorer">
+                    <FontIcon Glyph="{StaticResource IconGlyphGraph}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
+                  </Button>
+                  <Button Style="{StaticResource IconButtonStyle}"
+                          ToolTipService.ToolTip="Documentation">
+                    <FontIcon Glyph="{StaticResource IconGlyphHelp}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" />
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <!-- GraphQL Content Area -->
+            <Grid Grid.Row="3" Background="{StaticResource TabBarBackgroundBrush}">
+              <!-- Query Tab Panel (Index 0) -->
+              <Grid x:Name="GQLQueryPanel" Visibility="Visible" RowDefinitions="*">
+                <Grid ColumnDefinitions="Auto,*">
+                  <!-- Line Numbers -->
+                  <Border Grid.Column="0"
+                          Background="{StaticResource SurfaceVariantBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,1,0"
+                          MinWidth="48">
+                    <ScrollViewer x:Name="GQLQueryLineNumbersScroller"
+                                  VerticalScrollBarVisibility="Hidden"
+                                  HorizontalScrollBarVisibility="Disabled">
+                      <ItemsControl x:Name="GQLQueryLineNumbers" Margin="0,12,0,0">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontFamily="{StaticResource MonospaceFontFamily}"
+                                       FontSize="13"
+                                       HorizontalAlignment="Right"
+                                       Padding="8,1,12,1" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </Border>
+                  
+                  <!-- Query Editor -->
+                  <ScrollViewer Grid.Column="1"
+                                x:Name="GQLQueryScroller"
+                                HorizontalScrollBarVisibility="Auto"
+                                VerticalScrollBarVisibility="Auto"
+                                ViewChanged="GQLQuery_ViewChanged">
+                    <TextBox x:Name="GQLQueryTextBox"
+                             Text="{Binding GraphQLTabManager.ActiveTab.Query, Mode=TwoWay}"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             Background="Transparent"
+                             Foreground="{StaticResource TextPrimaryBrush}"
+                             FontFamily="{StaticResource MonospaceFontFamily}"
+                             FontSize="13"
+                             BorderThickness="0"
+                             Padding="12"
+                             MinHeight="200"
+                             TextChanged="GQLQueryTextBox_TextChanged"
+                             PlaceholderText="# Write your GraphQL query here...&#x0a;query {&#x0a;  ...&#x0a;}" />
+                  </ScrollViewer>
+                </Grid>
+              </Grid>
+
+              <!-- Variables Tab Panel (Index 1) -->
+              <Grid x:Name="GQLVariablesPanel" Visibility="Collapsed" RowDefinitions="Auto,*">
+                <!-- Variables Header -->
+                <Border Grid.Row="0"
+                        Background="{StaticResource RequestBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,10">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Query Variables (JSON)"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontFamily="{StaticResource AppFontFamilyMedium}"
+                               FontSize="13"
+                               VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              ToolTipService.ToolTip="Format JSON"
+                              Click="GQLFormatVariables_Click">
+                        <FontIcon Glyph="{StaticResource IconGlyphEdit}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              ToolTipService.ToolTip="Clear variables"
+                              Click="GQLClearVariables_Click">
+                        <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+                
+                <!-- Variables Editor -->
+                <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+                  <Border Grid.Column="0"
+                          Background="{StaticResource SurfaceVariantBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,1,0"
+                          MinWidth="48">
+                    <ItemsControl x:Name="GQLVariablesLineNumbers" Margin="0,12,0,0">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding}"
+                                     Foreground="{StaticResource TextMutedBrush}"
+                                     FontFamily="{StaticResource MonospaceFontFamily}"
+                                     FontSize="13"
+                                     HorizontalAlignment="Right"
+                                     Padding="8,1,12,1" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                  
+                  <ScrollViewer Grid.Column="1"
+                                HorizontalScrollBarVisibility="Auto"
+                                VerticalScrollBarVisibility="Auto">
+                    <TextBox x:Name="GQLVariablesTextBox"
+                             Text="{Binding GraphQLTabManager.ActiveTab.Variables, Mode=TwoWay}"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             Background="Transparent"
+                             Foreground="{StaticResource TextPrimaryBrush}"
+                             FontFamily="{StaticResource MonospaceFontFamily}"
+                             FontSize="13"
+                             BorderThickness="0"
+                             Padding="12"
+                             MinHeight="200"
+                             TextChanged="GQLVariablesTextBox_TextChanged"
+                             PlaceholderText="{}{&#x0a;  &quot;key&quot;: &quot;value&quot;&#x0a;}" />
+                  </ScrollViewer>
+                </Grid>
+              </Grid>
+
+              <!-- Headers Tab Panel (Index 2) -->
+              <ScrollViewer x:Name="GQLHeadersPanel" Visibility="Collapsed">
+                <Grid RowDefinitions="Auto,Auto,*" Padding="0">
+                  <!-- Headers Section Header -->
+                  <Border Grid.Row="0"
+                          Background="{StaticResource RequestBarBackgroundBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,0,1"
+                          Padding="16,12">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <TextBlock Text="Request Headers"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilySemiBold}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                        <Border Background="{StaticResource SurfaceVariantBrush}"
+                                CornerRadius="10"
+                                Padding="8,2">
+                          <TextBlock x:Name="GQLHeadersCount"
+                                     Text="1"
+                                     Foreground="{StaticResource TextMutedBrush}"
+                                     FontFamily="{StaticResource MonospaceFontFamily}"
+                                     FontSize="11"
+                                     VerticalAlignment="Center" />
+                        </Border>
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                        <Button Style="{StaticResource IconButtonStyle}"
+                                Click="GQLClearAllHeaders_Click"
+                                ToolTipService.ToolTip="Clear all headers">
+                          <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                        </Button>
+                        <Button Style="{StaticResource IconButtonStyle}"
+                                Click="GQLAddHeader_Click"
+                                ToolTipService.ToolTip="Add header">
+                          <FontIcon Glyph="{StaticResource IconGlyphAdd}" FontSize="14" Foreground="{StaticResource AccentPrimaryBrush}" />
+                        </Button>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+
+                  <!-- Headers Table Header -->
+                  <Border Grid.Row="1"
+                          Background="{StaticResource TabBarBackgroundBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,0,1"
+                          Padding="0">
+                    <Grid ColumnDefinitions="52,*,*,88">
+                      <Border Grid.Column="0"
+                              BorderBrush="{StaticResource RequestBarBorderBrush}"
+                              BorderThickness="0,0,1,0"
+                              Padding="0,10" />
+                      <Border Grid.Column="1"
+                              BorderBrush="{StaticResource RequestBarBorderBrush}"
+                              BorderThickness="0,0,1,0"
+                              Padding="16,10">
+                        <TextBlock Text="Key"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                      </Border>
+                      <Border Grid.Column="2"
+                              BorderBrush="{StaticResource RequestBarBorderBrush}"
+                              BorderThickness="0,0,1,0"
+                              Padding="16,10">
+                        <TextBlock Text="Value"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                      </Border>
+                      <Border Grid.Column="3"
+                              Padding="8,10">
+                        <TextBlock Text="Actions"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12"
+                                   HorizontalAlignment="Center" />
+                      </Border>
+                    </Grid>
+                  </Border>
+
+                  <!-- Headers Table Rows -->
+                  <StackPanel Grid.Row="2">
+                    <ItemsControl x:Name="GQLHeadersItemsControl" ItemsSource="{Binding GraphQLTabManager.ActiveTab.Headers}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                                  BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                  BorderThickness="0,0,0,1">
+                            <Grid ColumnDefinitions="52,*,*,88">
+                              <Border Grid.Column="0"
+                                      BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                      BorderThickness="0,0,1,0"
+                                      Padding="0,8">
+                                <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                          MinWidth="0"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                              </Border>
+                              <Border Grid.Column="1"
+                                      BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                      BorderThickness="0,0,1,0">
+                                <TextBox Text="{Binding HeaderKey, Mode=TwoWay}"
+                                         PlaceholderText="Header name"
+                                         Style="{StaticResource ParameterTextBoxStyle}" />
+                              </Border>
+                              <Border Grid.Column="2"
+                                      BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                      BorderThickness="0,0,1,0">
+                                <TextBox Text="{Binding HeaderValue, Mode=TwoWay}"
+                                         PlaceholderText="Value"
+                                         Style="{StaticResource ParameterTextBoxStyle}" />
+                              </Border>
+                              <StackPanel Grid.Column="3"
+                                          Orientation="Horizontal"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Spacing="4">
+                                <Button Style="{StaticResource IconButtonStyle}"
+                                        ToolTipService.ToolTip="Delete header"
+                                        Click="GQLDeleteHeader_Click">
+                                  <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="12" Foreground="{StaticResource ErrorBrush}" />
+                                </Button>
+                              </StackPanel>
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Add Header Row -->
+                    <Border Background="{StaticResource RequestBarBackgroundBrush}"
+                            BorderBrush="{StaticResource RequestBarBorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="16,12">
+                      <Button Click="GQLAddHeader_Click"
+                              Style="{StaticResource IconButtonStyle}"
+                              HorizontalAlignment="Left"
+                              ToolTipService.ToolTip="Add new header">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <FontIcon Glyph="{StaticResource IconGlyphAdd}"
+                                    FontSize="14"
+                                    Foreground="{StaticResource AccentPrimaryBrush}" />
+                          <TextBlock Text="Add Header"
+                                     Foreground="{StaticResource AccentPrimaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamilyMedium}"
+                                     FontSize="13"
+                                     VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Button>
+                    </Border>
+                  </StackPanel>
+                </Grid>
+              </ScrollViewer>
+
+              <!-- Authorization Tab Panel (Index 3) -->
+              <ScrollViewer x:Name="GQLAuthPanel" Visibility="Collapsed">
+                <Grid RowDefinitions="Auto,*" Background="{StaticResource RequestBarBackgroundBrush}">
+                  <!-- Auth Header Bar -->
+                  <Border Grid.Row="0"
+                          Background="{StaticResource RequestBarBackgroundBrush}"
+                          BorderBrush="{StaticResource RequestBarBorderBrush}"
+                          BorderThickness="0,0,0,1"
+                          Padding="16,12">
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                      <TextBlock Text="Authorization Type"
+                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="13"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,12,0" />
+                      
+                      <ComboBox Grid.Column="1"
+                                x:Name="GQLAuthTypeComboBox"
+                                ItemsSource="{Binding AuthTypes}"
+                                SelectedIndex="0"
+                                SelectionChanged="GQLAuthType_SelectionChanged"
+                                MinWidth="160"
+                                Background="{StaticResource MethodSelectorBgBrush}"
+                                BorderThickness="1"
+                                BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                Padding="12,8">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <TextBlock Text="{Binding Name}"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontFamily="{StaticResource AppFontFamily}"
+                                       FontSize="13" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      
+                      <StackPanel Grid.Column="3"
+                                  Orientation="Horizontal"
+                                  Spacing="8"
+                                  VerticalAlignment="Center">
+                        <Button Style="{StaticResource IconButtonStyle}"
+                                ToolTipService.ToolTip="Clear authorization"
+                                Click="GQLClearAuth_Click">
+                          <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                        </Button>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                  
+                  <!-- Auth Configuration Content -->
+                  <Grid Grid.Row="1" Padding="24,20" MinHeight="200">
+                    <!-- None Auth Panel -->
+                    <StackPanel x:Name="GQLAuthNonePanel" Visibility="Visible" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <FontIcon Glyph="&#xE72E;" FontSize="48" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,16" HorizontalAlignment="Center" />
+                      <TextBlock Text="This request does not use any authorization"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamily}"
+                                 FontSize="14"
+                                 HorizontalAlignment="Center" />
+                    </StackPanel>
+                    
+                    <!-- Bearer Token Panel -->
+                    <StackPanel x:Name="GQLAuthBearerPanel" Visibility="Collapsed" Spacing="20" MaxWidth="600">
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Token"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyMedium}"
+                                   FontSize="12" />
+                        <TextBox x:Name="GQLBearerTokenInput"
+                                 PlaceholderText="Enter bearer token"
+                                 Background="{StaticResource InputBackgroundBrush}"
+                                 BorderBrush="{StaticResource RequestBarBorderBrush}"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 Padding="12,10"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="80" />
+                      </StackPanel>
+                      <Border Background="{StaticResource SurfaceVariantBrush}"
+                              CornerRadius="6"
+                              Padding="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource InfoBrush}" />
+                          <TextBlock Text="The token will be sent in the Authorization header."
+                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                  </Grid>
+                </Grid>
+              </ScrollViewer>
+            </Grid>
+
+            <!-- GraphQL Response Splitter -->
+            <Border Grid.Row="4"
+                    x:Name="GQLResponseSplitter"
+                    Background="{StaticResource SurfaceVariantBrush}"
+                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                    BorderThickness="0,1,0,1"
+                    Height="8"
+                    PointerPressed="GQLResponseSplitter_PointerPressed"
+                    PointerMoved="GQLResponseSplitter_PointerMoved"
+                    PointerReleased="GQLResponseSplitter_PointerReleased"
+                    PointerCaptureLost="GQLResponseSplitter_PointerCaptureLost">
+              <Border Background="{StaticResource TextMutedBrush}"
+                      Width="48"
+                      Height="4"
+                      CornerRadius="2"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Opacity="0.6" />
+            </Border>
+
+            <!-- GraphQL Response Section -->
+            <Border Grid.Row="5"
+                    x:Name="GQLResponseSection"
+                    Background="{StaticResource RequestBarBackgroundBrush}"
+                    BorderBrush="{StaticResource RequestBarBorderBrush}"
+                    BorderThickness="0,0,0,0"
+                    MinHeight="150"
+                    MaxHeight="600"
+                    Height="280">
+              <Grid RowDefinitions="Auto,Auto,*">
+                <!-- Response Status Bar -->
+                <Border Grid.Row="0"
+                        Background="{StaticResource SurfaceVariantBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="12,8">
+                  <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Status:"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12"
+                                 VerticalAlignment="Center" />
+                      <Border x:Name="GQLStatusBadge"
+                              Background="{StaticResource TextMutedBrush}"
+                              CornerRadius="4"
+                              Padding="8,4">
+                        <TextBlock x:Name="GQLResponseStatusText"
+                                   Text="Awaiting request"
+                                   Foreground="{StaticResource OverlayBrush}"
+                                   FontFamily="{StaticResource AppFontFamilyBold}"
+                                   FontSize="11" />
+                      </Border>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="20,0,0,0">
+                      <TextBlock Text="Time:"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12"
+                                 VerticalAlignment="Center" />
+                      <TextBlock x:Name="GQLResponseTimeText"
+                                 Text="0 ms"
+                                 Foreground="{StaticResource AccentPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 FontSize="12"
+                                 VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="20,0,0,0">
+                      <TextBlock Text="Size:"
+                                 Foreground="{StaticResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamilyMedium}"
+                                 FontSize="12"
+                                 VerticalAlignment="Center" />
+                      <TextBlock x:Name="GQLResponseSizeText"
+                                 Text="0 KB"
+                                 Foreground="{StaticResource AccentPrimaryBrush}"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 FontSize="12"
+                                 VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+
+                <!-- Response Tabs and Toolbar -->
+                <Border Grid.Row="1"
+                        Background="{StaticResource TabBarBackgroundBrush}"
+                        BorderBrush="{StaticResource RequestBarBorderBrush}"
+                        BorderThickness="0,0,0,1">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <!-- Response Tabs -->
+                    <StackPanel Orientation="Horizontal">
+                      <Button x:Name="GQLResponseTabJson"
+                              Content="JSON"
+                              Tag="0"
+                              Click="GQLResponseTab_Click"
+                              Style="{StaticResource RequestTabActiveStyle}" />
+                      <Button x:Name="GQLResponseTabRaw"
+                              Content="Raw"
+                              Tag="1"
+                              Click="GQLResponseTab_Click"
+                              Style="{StaticResource RequestTabStyle}" />
+                      <Button x:Name="GQLResponseTabErrors"
+                              Content="Errors"
+                              Tag="2"
+                              Click="GQLResponseTab_Click"
+                              Style="{StaticResource RequestTabStyle}" />
+                    </StackPanel>
+
+                    <!-- Response Toolbar -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" Margin="0,0,8,0">
+                      <Button x:Name="GQLWrapLinesToggle"
+                              Style="{StaticResource IconButtonStyle}"
+                              ToolTipService.ToolTip="Wrap Lines"
+                              Click="GQLWrapLines_Click">
+                        <FontIcon x:Name="GQLWrapIcon" Glyph="&#xE8B3;" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Border Width="1" Background="{StaticResource RequestBarBorderBrush}" Margin="4,8" />
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              Click="GQLDownloadResponse_Click"
+                              ToolTipService.ToolTip="Download Response">
+                        <FontIcon Glyph="&#xE896;" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button x:Name="GQLCopyResponseButton"
+                              Style="{StaticResource IconButtonStyle}"
+                              Click="GQLCopyResponse_Click"
+                              ToolTipService.ToolTip="Copy Response">
+                        <FontIcon x:Name="GQLCopyResponseIcon" Glyph="{StaticResource IconGlyphCopy}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                      <Button Style="{StaticResource IconButtonStyle}"
+                              Click="GQLClearResponse_Click"
+                              ToolTipService.ToolTip="Clear Response">
+                        <FontIcon Glyph="{StaticResource IconGlyphDelete}" FontSize="14" Foreground="{StaticResource TextMutedBrush}" />
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+
+                <!-- Response Content Area -->
+                <Grid Grid.Row="2">
+                  <!-- JSON View Panel -->
+                  <Grid x:Name="GQLResponseJsonPanel" Visibility="Visible">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <!-- Line Numbers -->
+                      <Border Grid.Column="0"
+                              Background="{StaticResource SurfaceVariantBrush}"
+                              BorderBrush="{StaticResource RequestBarBorderBrush}"
+                              BorderThickness="0,0,1,0"
+                              MinWidth="48">
+                        <ScrollViewer x:Name="GQLResponseLineNumbersScroller"
+                                      VerticalScrollBarVisibility="Hidden"
+                                      HorizontalScrollBarVisibility="Disabled">
+                          <ItemsControl x:Name="GQLResponseLineNumbersControl">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <TextBlock Text="{Binding}"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontFamily="{StaticResource MonospaceFontFamily}"
+                                           FontSize="12"
+                                           HorizontalAlignment="Right"
+                                           Padding="8,1,12,1" />
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </ScrollViewer>
+                      </Border>
+                      
+                      <!-- JSON Content -->
+                      <ScrollViewer x:Name="GQLResponseContentScroller"
+                                    Grid.Column="1"
+                                    HorizontalScrollBarVisibility="Auto"
+                                    VerticalScrollBarVisibility="Auto"
+                                    ViewChanged="GQLResponseContent_ViewChanged"
+                                    Padding="12,8">
+                        <TextBlock x:Name="GQLResponseHighlightBlock"
+                                   FontFamily="{StaticResource MonospaceFontFamily}"
+                                   FontSize="12"
+                                   TextWrapping="NoWrap"
+                                   IsTextSelectionEnabled="True"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Text="// Response will appear here after running a request" />
+                      </ScrollViewer>
+                    </Grid>
+                  </Grid>
+
+                  <!-- Raw View Panel -->
+                  <Grid x:Name="GQLResponseRawPanel" Visibility="Collapsed">
+                    <ScrollViewer x:Name="GQLRawContentScroller"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="12,8">
+                      <TextBlock x:Name="GQLResponseRawText"
+                                 FontFamily="{StaticResource MonospaceFontFamily}"
+                                 FontSize="12"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 TextWrapping="NoWrap"
+                                 IsTextSelectionEnabled="True" />
+                    </ScrollViewer>
+                  </Grid>
+
+                  <!-- Errors Panel -->
+                  <Grid x:Name="GQLResponseErrorsPanel" Visibility="Collapsed">
+                    <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="16">
+                      <StackPanel x:Name="GQLErrorsContent" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8">
+                        <FontIcon Glyph="&#xE73E;" FontSize="32" Foreground="{StaticResource SuccessBrush}" />
+                        <TextBlock Text="No errors"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontFamily="{StaticResource AppFontFamily}"
+                                   FontSize="14"
+                                   HorizontalAlignment="Center" />
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Border>
+          </Grid>
         </Grid>
       </NavigationView.Content>
     </NavigationView>

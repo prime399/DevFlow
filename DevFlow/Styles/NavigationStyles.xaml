@@ -162,6 +162,7 @@
             <Border x:Name="SelectionIndicator"
                     Width="3"
                     Height="20"
+                    Margin="4,0,0,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     CornerRadius="2"

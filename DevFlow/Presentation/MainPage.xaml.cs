@@ -568,6 +568,526 @@ public sealed partial class MainPage : Page
 
     #endregion
 
+    #region Navigation
+
+    private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (args.SelectedItem is NavigationViewItem item)
+        {
+            var content = item.Content?.ToString();
+            if (content == "REST")
+            {
+                RestContent.Visibility = Visibility.Visible;
+                GraphQLContent.Visibility = Visibility.Collapsed;
+            }
+            else if (content == "GraphQL")
+            {
+                RestContent.Visibility = Visibility.Collapsed;
+                GraphQLContent.Visibility = Visibility.Visible;
+                UpdateGQLQueryLineNumbers();
+            }
+        }
+    }
+
+    #endregion
+
+    #region GraphQL Handlers
+
+    private int _gqlCurrentTabIndex = 0;
+    private int _gqlCurrentResponseTabIndex = 0;
+    private bool _gqlWrapLines = false;
+    private bool _gqlIsResizing = false;
+    private double _gqlStartY;
+    private double _gqlStartHeight;
+    private string _gqlResponseBody = string.Empty;
+
+    private GraphQLTabManager? GetGraphQLTabManager()
+    {
+        var dc = DataContext;
+        if (dc == null) return null;
+        var prop = dc.GetType().GetProperty("GraphQLTabManager");
+        return prop?.GetValue(dc) as GraphQLTabManager;
+    }
+
+    private void AddGraphQLTab_Click(object sender, RoutedEventArgs e)
+    {
+        GetGraphQLTabManager()?.AddNewTab();
+    }
+
+    private void GraphQLTab_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is GraphQLTab tab)
+        {
+            GetGraphQLTabManager()?.SetActiveTab(tab);
+            UpdateGQLQueryLineNumbers();
+            UpdateGQLVariablesLineNumbers();
+        }
+    }
+
+    private void CloseGraphQLTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is GraphQLTab tab)
+        {
+            GetGraphQLTabManager()?.CloseTab(tab);
+        }
+    }
+
+    private async void GraphQLTabName_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is GraphQLTab tab)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Edit Request",
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var nameTextBox = new TextBox { Text = tab.Name, PlaceholderText = "Untitled" };
+            dialog.Content = nameTextBox;
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(nameTextBox.Text))
+            {
+                GetGraphQLTabManager()?.RenameTab(tab, nameTextBox.Text.Trim());
+            }
+        }
+    }
+
+    private void GQLTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string tagStr && int.TryParse(tagStr, out int tabIndex))
+        {
+            SwitchToGQLTab(tabIndex);
+        }
+    }
+
+    private void SwitchToGQLTab(int tabIndex)
+    {
+        if (tabIndex == _gqlCurrentTabIndex) return;
+
+        var tabButtons = new Button[] { GQLTabQuery, GQLTabVariables, GQLTabHeaders, GQLTabAuth };
+        var tabPanels = new FrameworkElement[] { GQLQueryPanel, GQLVariablesPanel, GQLHeadersPanel, GQLAuthPanel };
+
+        for (int i = 0; i < tabButtons.Length; i++)
+        {
+            tabButtons[i].Style = i == tabIndex
+                ? (Style)Resources["RequestTabActiveStyle"] ?? (Style)Application.Current.Resources["RequestTabActiveStyle"]
+                : (Style)Resources["RequestTabStyle"] ?? (Style)Application.Current.Resources["RequestTabStyle"];
+
+            tabPanels[i].Visibility = i == tabIndex ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        _gqlCurrentTabIndex = tabIndex;
+
+        if (tabIndex == 0)
+            UpdateGQLQueryLineNumbers();
+        else if (tabIndex == 1)
+            UpdateGQLVariablesLineNumbers();
+        else if (tabIndex == 2)
+            UpdateGQLHeadersCount();
+    }
+
+    private void GQLQueryTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateGQLQueryLineNumbers();
+    }
+
+    private void UpdateGQLQueryLineNumbers()
+    {
+        var text = GQLQueryTextBox?.Text ?? string.Empty;
+        var lineCount = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+        var lineNumbers = Enumerable.Range(1, lineCount).Select(i => i.ToString()).ToList();
+        if (GQLQueryLineNumbers != null)
+            GQLQueryLineNumbers.ItemsSource = lineNumbers;
+    }
+
+    private void GQLVariablesTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateGQLVariablesLineNumbers();
+    }
+
+    private void UpdateGQLVariablesLineNumbers()
+    {
+        var text = GQLVariablesTextBox?.Text ?? string.Empty;
+        var lineCount = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+        var lineNumbers = Enumerable.Range(1, lineCount).Select(i => i.ToString()).ToList();
+        if (GQLVariablesLineNumbers != null)
+            GQLVariablesLineNumbers.ItemsSource = lineNumbers;
+    }
+
+    private void UpdateGQLHeadersCount()
+    {
+        var tabManager = GetGraphQLTabManager();
+        if (tabManager?.ActiveTab != null && GQLHeadersCount != null)
+        {
+            GQLHeadersCount.Text = tabManager.ActiveTab.Headers.Count.ToString();
+        }
+    }
+
+    private void GQLQuery_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (sender is ScrollViewer contentScroller && GQLQueryLineNumbersScroller != null)
+        {
+            GQLQueryLineNumbersScroller.ChangeView(null, contentScroller.VerticalOffset, null, true);
+        }
+    }
+
+    private void GQLRunRequest_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement GraphQL request execution
+        // For now, show a placeholder response
+        if (GQLProgressRing != null)
+            GQLProgressRing.IsActive = true;
+
+        _ = Task.Delay(500).ContinueWith(_ =>
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (GQLProgressRing != null)
+                    GQLProgressRing.IsActive = false;
+
+                _gqlResponseBody = "{\n  \"data\": {\n    \"method\": \"POST\",\n    \"url\": \"https://echo.hoppscotch.io/graphql\"\n  }\n}";
+                
+                if (GQLResponseHighlightBlock != null)
+                {
+                    try
+                    {
+                        JsonSyntaxHighlighter.ApplyHighlighting(GQLResponseHighlightBlock, _gqlResponseBody);
+                    }
+                    catch
+                    {
+                        GQLResponseHighlightBlock.Text = _gqlResponseBody;
+                    }
+                }
+                
+                if (GQLResponseRawText != null)
+                    GQLResponseRawText.Text = _gqlResponseBody;
+                
+                if (GQLResponseStatusText != null)
+                    GQLResponseStatusText.Text = "200 OK";
+                
+                if (GQLStatusBadge != null)
+                    GQLStatusBadge.Background = (Brush)Application.Current.Resources["SuccessBrush"];
+                
+                if (GQLResponseTimeText != null)
+                    GQLResponseTimeText.Text = "42 ms";
+                
+                if (GQLResponseSizeText != null)
+                    GQLResponseSizeText.Text = "0.15 KB";
+                
+                UpdateGQLResponseLineNumbers();
+            });
+        });
+    }
+
+    private void UpdateGQLResponseLineNumbers()
+    {
+        var lineCount = string.IsNullOrEmpty(_gqlResponseBody) ? 1 : _gqlResponseBody.Split('\n').Length;
+        var lineNumbers = Enumerable.Range(1, lineCount).Select(i => i.ToString()).ToList();
+        if (GQLResponseLineNumbersControl != null)
+            GQLResponseLineNumbersControl.ItemsSource = lineNumbers;
+    }
+
+    private void GQLHistory_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Show history panel
+    }
+
+    private async void GQLCopyQuery_Click(object sender, RoutedEventArgs e)
+    {
+        var text = GQLQueryTextBox?.Text ?? string.Empty;
+        if (!string.IsNullOrEmpty(text))
+        {
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
+    }
+
+    private void GQLFormatQuery_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement GraphQL query formatting
+    }
+
+    private void GQLFormatVariables_Click(object sender, RoutedEventArgs e)
+    {
+        if (GQLVariablesTextBox == null) return;
+
+        try
+        {
+            var text = GQLVariablesTextBox.Text;
+            if (string.IsNullOrWhiteSpace(text)) return;
+
+            using var doc = JsonDocument.Parse(text);
+            var formatted = JsonSerializer.Serialize(doc, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+            GQLVariablesTextBox.Text = formatted;
+        }
+        catch (JsonException)
+        {
+            // Invalid JSON
+        }
+    }
+
+    private void GQLClearVariables_Click(object sender, RoutedEventArgs e)
+    {
+        if (GQLVariablesTextBox != null)
+            GQLVariablesTextBox.Text = "{}";
+    }
+
+    private void GQLAddHeader_Click(object sender, RoutedEventArgs e)
+    {
+        var tabManager = GetGraphQLTabManager();
+        tabManager?.ActiveTab?.Headers.Add(new RequestHeader());
+        UpdateGQLHeadersCount();
+    }
+
+    private void GQLDeleteHeader_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is RequestHeader header)
+        {
+            var tabManager = GetGraphQLTabManager();
+            var headers = tabManager?.ActiveTab?.Headers;
+            if (headers != null)
+            {
+                if (headers.Count > 1)
+                {
+                    headers.Remove(header);
+                }
+                else
+                {
+                    header.HeaderKey = string.Empty;
+                    header.HeaderValue = string.Empty;
+                    header.IsEnabled = true;
+                }
+                UpdateGQLHeadersCount();
+            }
+        }
+    }
+
+    private void GQLClearAllHeaders_Click(object sender, RoutedEventArgs e)
+    {
+        var tabManager = GetGraphQLTabManager();
+        var headers = tabManager?.ActiveTab?.Headers;
+        if (headers != null)
+        {
+            headers.Clear();
+            headers.Add(new RequestHeader());
+            UpdateGQLHeadersCount();
+        }
+    }
+
+    private void GQLAuthType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is AuthTypeOption selectedType)
+        {
+            SwitchToGQLAuthPanel(selectedType.Type);
+        }
+    }
+
+    private void SwitchToGQLAuthPanel(AuthorizationType authType)
+    {
+        if (GQLAuthNonePanel == null || GQLAuthBearerPanel == null) return;
+
+        GQLAuthNonePanel.Visibility = authType == AuthorizationType.None ? Visibility.Visible : Visibility.Collapsed;
+        GQLAuthBearerPanel.Visibility = authType == AuthorizationType.BearerToken ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void GQLClearAuth_Click(object sender, RoutedEventArgs e)
+    {
+        if (GQLBearerTokenInput != null)
+            GQLBearerTokenInput.Text = string.Empty;
+        if (GQLAuthTypeComboBox != null)
+            GQLAuthTypeComboBox.SelectedIndex = 0;
+    }
+
+    private void GQLResponseTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string tagStr && int.TryParse(tagStr, out int tabIndex))
+        {
+            SwitchToGQLResponseTab(tabIndex);
+        }
+    }
+
+    private void SwitchToGQLResponseTab(int tabIndex)
+    {
+        if (tabIndex == _gqlCurrentResponseTabIndex) return;
+
+        var tabButtons = new Button[] { GQLResponseTabJson, GQLResponseTabRaw, GQLResponseTabErrors };
+        var tabPanels = new FrameworkElement[] { GQLResponseJsonPanel, GQLResponseRawPanel, GQLResponseErrorsPanel };
+
+        for (int i = 0; i < tabButtons.Length; i++)
+        {
+            tabButtons[i].Style = i == tabIndex
+                ? (Style)Resources["RequestTabActiveStyle"] ?? (Style)Application.Current.Resources["RequestTabActiveStyle"]
+                : (Style)Resources["RequestTabStyle"] ?? (Style)Application.Current.Resources["RequestTabStyle"];
+
+            tabPanels[i].Visibility = i == tabIndex ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        _gqlCurrentResponseTabIndex = tabIndex;
+    }
+
+    private void GQLResponseContent_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (sender is ScrollViewer contentScroller && GQLResponseLineNumbersScroller != null)
+        {
+            GQLResponseLineNumbersScroller.ChangeView(null, contentScroller.VerticalOffset, null, true);
+        }
+    }
+
+    private void GQLWrapLines_Click(object sender, RoutedEventArgs e)
+    {
+        _gqlWrapLines = !_gqlWrapLines;
+
+        var wrapping = _gqlWrapLines ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        var scrollMode = _gqlWrapLines ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
+
+        if (GQLResponseHighlightBlock != null)
+            GQLResponseHighlightBlock.TextWrapping = wrapping;
+        if (GQLResponseContentScroller != null)
+            GQLResponseContentScroller.HorizontalScrollBarVisibility = scrollMode;
+        if (GQLResponseRawText != null)
+            GQLResponseRawText.TextWrapping = wrapping;
+        if (GQLRawContentScroller != null)
+            GQLRawContentScroller.HorizontalScrollBarVisibility = scrollMode;
+
+        if (GQLWrapIcon != null)
+        {
+            GQLWrapIcon.Foreground = _gqlWrapLines
+                ? (Brush)Application.Current.Resources["AccentPrimaryBrush"]
+                : (Brush)Application.Current.Resources["TextMutedBrush"];
+        }
+    }
+
+    private async void GQLCopyResponse_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_gqlResponseBody))
+        {
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(_gqlResponseBody);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+
+            if (GQLCopyResponseIcon != null)
+            {
+                var originalGlyph = GQLCopyResponseIcon.Glyph;
+                var originalForeground = GQLCopyResponseIcon.Foreground;
+
+                GQLCopyResponseIcon.Glyph = "\uE73E";
+                GQLCopyResponseIcon.Foreground = (Brush)Application.Current.Resources["SuccessBrush"];
+
+                await Task.Delay(1500);
+
+                GQLCopyResponseIcon.Glyph = originalGlyph;
+                GQLCopyResponseIcon.Foreground = originalForeground;
+            }
+        }
+    }
+
+    private async void GQLDownloadResponse_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_gqlResponseBody)) return;
+
+        try
+        {
+            var savePicker = new Windows.Storage.Pickers.FileSavePicker();
+            savePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Downloads;
+            savePicker.FileTypeChoices.Add("JSON", new List<string> { ".json" });
+            savePicker.SuggestedFileName = $"graphql_response_{DateTime.Now:yyyyMMdd_HHmmss}";
+
+            var window = (Application.Current as App)?.MainWindow;
+            if (window != null)
+            {
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hwnd);
+            }
+
+            var file = await savePicker.PickSaveFileAsync();
+            if (file != null)
+            {
+                await Windows.Storage.FileIO.WriteTextAsync(file, _gqlResponseBody);
+            }
+        }
+        catch
+        {
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(_gqlResponseBody);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
+    }
+
+    private void GQLClearResponse_Click(object sender, RoutedEventArgs e)
+    {
+        _gqlResponseBody = string.Empty;
+        
+        if (GQLResponseHighlightBlock != null)
+            GQLResponseHighlightBlock.Text = "// Response will appear here after running a request";
+        if (GQLResponseRawText != null)
+            GQLResponseRawText.Text = string.Empty;
+        if (GQLResponseStatusText != null)
+            GQLResponseStatusText.Text = "Awaiting request";
+        if (GQLStatusBadge != null)
+            GQLStatusBadge.Background = (Brush)Application.Current.Resources["TextMutedBrush"];
+        if (GQLResponseTimeText != null)
+            GQLResponseTimeText.Text = "0 ms";
+        if (GQLResponseSizeText != null)
+            GQLResponseSizeText.Text = "0 KB";
+        if (GQLResponseLineNumbersControl != null)
+            GQLResponseLineNumbersControl.ItemsSource = null;
+    }
+
+    #region GraphQL Response Splitter
+
+    private void GQLResponseSplitter_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border splitter)
+        {
+            _gqlIsResizing = true;
+            _gqlStartY = e.GetCurrentPoint(this).Position.Y;
+            _gqlStartHeight = GQLResponseSection?.Height ?? 280;
+            splitter.CapturePointer(e.Pointer);
+            e.Handled = true;
+        }
+    }
+
+    private void GQLResponseSplitter_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (_gqlIsResizing && GQLResponseSection != null)
+        {
+            var currentY = e.GetCurrentPoint(this).Position.Y;
+            var delta = _gqlStartY - currentY;
+            var newHeight = _gqlStartHeight + delta;
+
+            newHeight = Math.Max(GQLResponseSection.MinHeight, Math.Min(GQLResponseSection.MaxHeight, newHeight));
+            GQLResponseSection.Height = newHeight;
+            e.Handled = true;
+        }
+    }
+
+    private void GQLResponseSplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border splitter)
+        {
+            _gqlIsResizing = false;
+            splitter.ReleasePointerCapture(e.Pointer);
+            e.Handled = true;
+        }
+    }
+
+    private void GQLResponseSplitter_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        _gqlIsResizing = false;
+    }
+
+    #endregion
+
+    #endregion
+
     #region Request Tab Handlers
 
     private RequestTabManager? GetTabManager()
