@@ -38,26 +38,52 @@ public sealed partial class MainPageModular : Page
         GraphQLView.ViewModel = _graphQLViewModel;
         RealtimeView.ViewModel = _realtimeViewModel;
 
-        // Initialize Settings ViewModel from DI if available, otherwise create manually
+        // Initialize Settings ViewModel from DI
+        InitializeSettingsViewModel();
+    }
+
+    private void InitializeSettingsViewModel()
+    {
         try
         {
             var serviceProvider = ((App)Application.Current).Host?.Services;
-            if (serviceProvider != null)
+            if (serviceProvider == null)
             {
-                var localizationService = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
-                var settingsService = serviceProvider.GetService(typeof(ISettingsService)) as ISettingsService;
-
-                if (localizationService != null && settingsService != null)
-                {
-                    var languageService = new LanguageService(localizationService, settingsService);
-                    _settingsViewModel = new SettingsViewModel(languageService, settingsService);
-                    SettingsView.ViewModel = _settingsViewModel;
-                }
+                System.Diagnostics.Debug.WriteLine("Settings: Host services not available");
+                return;
             }
+
+            // Get services from DI container
+            var localizationService = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
+            var settingsService = serviceProvider.GetService(typeof(ISettingsService)) as ISettingsService;
+
+            if (localizationService == null)
+            {
+                System.Diagnostics.Debug.WriteLine("Settings: ILocalizationService not registered");
+                return;
+            }
+
+            if (settingsService == null)
+            {
+                System.Diagnostics.Debug.WriteLine("Settings: ISettingsService not registered");
+                return;
+            }
+
+            // Get or create language service
+            var languageService = serviceProvider.GetService(typeof(ILanguageService)) as ILanguageService;
+            if (languageService == null)
+            {
+                languageService = new LanguageService(localizationService, settingsService);
+            }
+
+            _settingsViewModel = new SettingsViewModel(languageService, settingsService);
+            SettingsView.ViewModel = _settingsViewModel;
+            
+            System.Diagnostics.Debug.WriteLine($"Settings: Initialized with {languageService.SupportedLanguages.Count} languages, current: {languageService.CurrentLanguageCode}");
         }
-        catch
+        catch (Exception ex)
         {
-            // Settings will work without ViewModel, just won't have language switching
+            System.Diagnostics.Debug.WriteLine($"Settings: Failed to initialize - {ex.Message}");
         }
     }
 

@@ -52,6 +52,7 @@ public sealed partial class SettingsView : UserControl
                 LanguageComboBox.SelectedItem = lang;
                 _originalLanguageCode = lang.Code;
                 _selectedLanguageCode = lang.Code;
+                UpdateCurrentLanguageDisplay(lang);
                 break;
             }
         }
@@ -64,8 +65,14 @@ public sealed partial class SettingsView : UserControl
             {
                 _originalLanguageCode = firstLang.Code;
                 _selectedLanguageCode = firstLang.Code;
+                UpdateCurrentLanguageDisplay(firstLang);
             }
         }
+    }
+
+    private void UpdateCurrentLanguageDisplay(LanguageOption lang)
+    {
+        CurrentLanguageText.Text = $"Current: {lang.NativeName} ({lang.Code})";
     }
 
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

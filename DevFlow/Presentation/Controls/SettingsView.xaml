@@ -48,34 +48,68 @@
                                        Foreground="{StaticResource TextPrimaryBrush}" />
                             
                             <ComboBox x:Name="LanguageComboBox"
-                                      MinWidth="250"
+                                      MinWidth="280"
                                       SelectionChanged="LanguageComboBox_SelectionChanged"
-                                      PlaceholderText="Select language">
+                                      PlaceholderText="Select language"
+                                      Style="{StaticResource SettingsComboBoxStyle}"
+                                      ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate x:DataType="settings:LanguageOption">
-                                        <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <FontIcon Glyph="&#xE774;" FontSize="16" 
-                                                      Foreground="{StaticResource AccentPrimaryBrush}" />
-                                            <TextBlock Text="{x:Bind NativeName}" />
-                                        </StackPanel>
+                                        <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="28">
+                                            <FontIcon Grid.Column="0" 
+                                                      Glyph="&#xE774;" 
+                                                      FontSize="16" 
+                                                      Foreground="{StaticResource AccentPrimaryBrush}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,12,0" />
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{x:Bind NativeName}" 
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           FontFamily="{StaticResource AppFontFamilyMedium}"
+                                                           FontSize="{StaticResource FontSizeBody}" />
+                                                <TextBlock Text="{x:Bind EnglishName}" 
+                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                           FontFamily="{StaticResource AppFontFamily}"
+                                                           FontSize="{StaticResource FontSizeSmall}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" 
+                                                       Text="{x:Bind Code}" 
+                                                       Foreground="{StaticResource TextSubtleBrush}"
+                                                       FontFamily="{StaticResource MonospaceFontFamily}"
+                                                       FontSize="{StaticResource FontSizeSmall}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="12,0,0,0" />
+                                        </Grid>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             
+                            <!-- Current Language Info -->
+                            <TextBlock x:Name="CurrentLanguageText"
+                                       Text=""
+                                       FontFamily="{StaticResource AppFontFamily}"
+                                       FontSize="{StaticResource FontSizeSmall}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,4,0,0" />
+                            
                             <!-- Restart Notice -->
-                            <StackPanel x:Name="RestartNotice" 
-                                        Orientation="Horizontal" 
-                                        Spacing="8"
-                                        Visibility="Collapsed">
-                                <FontIcon Glyph="&#xE946;" 
-                                          FontSize="14" 
-                                          Foreground="{StaticResource WarningBrush}" />
-                                <TextBlock Text="App restart required to apply language change"
-                                           x:Uid="Settings.Language.RestartNotice"
-                                           FontFamily="{StaticResource AppFontFamily}"
-                                           FontSize="{StaticResource FontSizeSmall}"
-                                           Foreground="{StaticResource WarningBrush}" />
-                            </StackPanel>
+                            <Border x:Name="RestartNotice" 
+                                    Background="{StaticResource SurfaceVariantBrush}"
+                                    CornerRadius="6"
+                                    Padding="12,8"
+                                    Visibility="Collapsed"
+                                    Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE946;" 
+                                              FontSize="14" 
+                                              Foreground="{StaticResource WarningBrush}" />
+                                    <TextBlock Text="App restart required to apply language change"
+                                               x:Uid="Settings.Language.RestartNotice"
+                                               FontFamily="{StaticResource AppFontFamily}"
+                                               FontSize="{StaticResource FontSizeSmall}"
+                                               Foreground="{StaticResource WarningBrush}" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
                     </StackPanel>
