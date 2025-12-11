@@ -20,6 +20,22 @@ public sealed partial class SettingsView : UserControl
     public SettingsView()
     {
         this.InitializeComponent();
+        Loaded += SettingsView_Loaded;
+    }
+
+    private void SettingsView_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Re-bind if ViewModel was set before control loaded
+        if (_viewModel != null)
+        {
+            BindViewModel(_viewModel);
+        }
+        else
+        {
+            // Show placeholder if no ViewModel
+            CurrentLanguageText.Text = "Language settings not available";
+            System.Diagnostics.Debug.WriteLine("SettingsView: No ViewModel available on Loaded");
+        }
     }
 
     public SettingsViewModel? ViewModel
@@ -39,12 +55,23 @@ public sealed partial class SettingsView : UserControl
 
     private void BindViewModel(SettingsViewModel vm)
     {
+        System.Diagnostics.Debug.WriteLine($"SettingsView: BindViewModel called with {vm.AvailableLanguages.Count} languages");
+        
         // Populate languages
         LanguageComboBox.ItemsSource = vm.AvailableLanguages;
         
+        if (vm.AvailableLanguages.Count == 0)
+        {
+            CurrentLanguageText.Text = "No languages available";
+            System.Diagnostics.Debug.WriteLine("SettingsView: No languages available in ViewModel");
+            return;
+        }
+        
         // Set current language selection
         var currentLangCode = vm.LanguageService.CurrentLanguageCode;
+        System.Diagnostics.Debug.WriteLine($"SettingsView: Current language code is '{currentLangCode}'");
         
+        bool found = false;
         foreach (var lang in vm.AvailableLanguages)
         {
             if (lang.Code.Equals(currentLangCode, StringComparison.OrdinalIgnoreCase))
@@ -53,12 +80,14 @@ public sealed partial class SettingsView : UserControl
                 _originalLanguageCode = lang.Code;
                 _selectedLanguageCode = lang.Code;
                 UpdateCurrentLanguageDisplay(lang);
+                found = true;
+                System.Diagnostics.Debug.WriteLine($"SettingsView: Selected language '{lang.NativeName}' ({lang.Code})");
                 break;
             }
         }
 
         // If nothing selected, select first
-        if (LanguageComboBox.SelectedItem == null && vm.AvailableLanguages.Count > 0)
+        if (!found && vm.AvailableLanguages.Count > 0)
         {
             LanguageComboBox.SelectedIndex = 0;
             if (vm.AvailableLanguages[0] is LanguageOption firstLang)
@@ -66,6 +95,7 @@ public sealed partial class SettingsView : UserControl
                 _originalLanguageCode = firstLang.Code;
                 _selectedLanguageCode = firstLang.Code;
                 UpdateCurrentLanguageDisplay(firstLang);
+                System.Diagnostics.Debug.WriteLine($"SettingsView: Defaulted to first language '{firstLang.NativeName}' ({firstLang.Code})");
             }
         }
     }
