@@ -675,24 +675,29 @@ public sealed partial class MainPage : Page
     {
         if (args.SelectedItem is NavigationViewItem item)
         {
-            var content = item.Content?.ToString();
+            var tag = item.Tag?.ToString();
             RestContent.Visibility = Visibility.Collapsed;
             GraphQLContent.Visibility = Visibility.Collapsed;
             RealtimeContent.Visibility = Visibility.Collapsed;
+            SettingsContent.Visibility = Visibility.Collapsed;
 
-            if (content == "REST")
+            if (tag == "REST")
             {
                 RestContent.Visibility = Visibility.Visible;
             }
-            else if (content == "GraphQL")
+            else if (tag == "GraphQL")
             {
                 GraphQLContent.Visibility = Visibility.Visible;
                 UpdateGQLQueryLineNumbers();
             }
-            else if (content == "Realtime")
+            else if (tag == "Realtime")
             {
                 RealtimeContent.Visibility = Visibility.Visible;
                 UpdateRTMessageLineNumbers();
+            }
+            else if (tag == "Settings")
+            {
+                SettingsContent.Visibility = Visibility.Visible;
             }
         }
     }

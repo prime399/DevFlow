@@ -4,6 +4,7 @@
       xmlns:utu="using:Uno.Toolkit.UI"
       xmlns:converters="using:DevFlow.Converters"
       xmlns:controls="using:DevFlow.Controls"
+      xmlns:pcontrols="using:DevFlow.Presentation.Controls"
       NavigationCacheMode="Required"
       Background="{StaticResource AppBackgroundBrush}">
 
@@ -50,6 +51,7 @@
       </NavigationView.MenuItemContainerStyle>
       <NavigationView.MenuItems>
         <NavigationViewItem Content="REST"
+                            Tag="REST"
                             IsSelected="True"
                             x:Uid="MainPage.Nav.Rest">
           <NavigationViewItem.Icon>
@@ -59,6 +61,7 @@
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="GraphQL"
+                            Tag="GraphQL"
                             x:Uid="MainPage.Nav.GraphQL">
           <NavigationViewItem.Icon>
             <FontIcon Glyph="{StaticResource IconGlyphGraph}" 
@@ -67,6 +70,7 @@
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="Realtime"
+                            Tag="Realtime"
                             x:Uid="MainPage.Nav.Realtime">
           <NavigationViewItem.Icon>
             <FontIcon Glyph="{StaticResource IconGlyphRealtime}" 
@@ -75,6 +79,7 @@
           </NavigationViewItem.Icon>
         </NavigationViewItem>
         <NavigationViewItem Content="Settings"
+                            Tag="Settings"
                             x:Uid="MainPage.Nav.Settings">
           <NavigationViewItem.Icon>
             <FontIcon Glyph="{StaticResource IconGlyphSettings}" 
@@ -3085,6 +3090,12 @@
               </Grid>
             </Grid>
           </Grid>
+
+          <!-- Settings Page -->
+          <Grid x:Name="SettingsContent" Visibility="Collapsed">
+            <pcontrols:SettingsView x:Name="SettingsView" />
+          </Grid>
+
         </Grid>
       </NavigationView.Content>
     </NavigationView>

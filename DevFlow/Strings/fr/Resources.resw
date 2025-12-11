@@ -118,6 +118,65 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ApplicationName" xml:space="preserve">
-    <value>DevFlow-fr</value>
+    <value>DevFlow</value>
+  </data>
+  <!-- Settings Page -->
+  <data name="Settings.PageTitle.Text" xml:space="preserve">
+    <value>Paramètres</value>
+  </data>
+  <data name="Settings.General.Title.Text" xml:space="preserve">
+    <value>Général</value>
+  </data>
+  <data name="Settings.General.Description.Text" xml:space="preserve">
+    <value>Paramètres généraux utilisés dans l'application</value>
+  </data>
+  <data name="Settings.Language.Title.Text" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Settings.Language.RestartNotice.Text" xml:space="preserve">
+    <value>Redémarrage de l'application requis pour appliquer le changement de langue</value>
+  </data>
+  <data name="Settings.Theme.Title.Text" xml:space="preserve">
+    <value>Thème</value>
+  </data>
+  <data name="Settings.Theme.Description.Text" xml:space="preserve">
+    <value>Personnalisez le thème de votre application</value>
+  </data>
+  <data name="Settings.Theme.Background.Text" xml:space="preserve">
+    <value>Arrière-plan</value>
+  </data>
+  <data name="Settings.Theme.AccentColor.Text" xml:space="preserve">
+    <value>Couleur d'accentuation</value>
+  </data>
+  <data name="Settings.SaveButton.Content" xml:space="preserve">
+    <value>Enregistrer les paramètres</value>
+  </data>
+  <data name="Settings.ResetButton.Content" xml:space="preserve">
+    <value>Réinitialiser</value>
+  </data>
+  <data name="Settings.About.Title.Text" xml:space="preserve">
+    <value>À propos</value>
+  </data>
+  <data name="Settings.About.Description.Text" xml:space="preserve">
+    <value>Informations sur l'application</value>
+  </data>
+  <data name="Settings.About.BuiltWith.Uno.Text" xml:space="preserve">
+    <value>Construit avec Uno Platform</value>
+  </data>
+  <data name="Settings.About.LearnMore.Content" xml:space="preserve">
+    <value>En savoir plus sur Uno Platform</value>
+  </data>
+  <!-- Navigation -->
+  <data name="MainPage.Nav.Rest.Content" xml:space="preserve">
+    <value>REST</value>
+  </data>
+  <data name="MainPage.Nav.GraphQL.Content" xml:space="preserve">
+    <value>GraphQL</value>
+  </data>
+  <data name="MainPage.Nav.Realtime.Content" xml:space="preserve">
+    <value>Temps Réel</value>
+  </data>
+  <data name="MainPage.Nav.Settings.Content" xml:space="preserve">
+    <value>Paramètres</value>
   </data>
 </root>

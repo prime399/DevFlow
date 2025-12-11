@@ -1,7 +1,9 @@
 using System.Net.Http;
 using DevFlow.Presentation.ViewModels;
+using DevFlow.Services.Settings;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Uno.Extensions.Localization;
 
 namespace DevFlow.Presentation;
 
@@ -10,6 +12,7 @@ public sealed partial class MainPageModular : Page
     private RestRequestViewModel? _restViewModel;
     private GraphQLViewModel? _graphQLViewModel;
     private RealtimeViewModel? _realtimeViewModel;
+    private SettingsViewModel? _settingsViewModel;
 
     public MainPageModular()
     {
@@ -34,20 +37,42 @@ public sealed partial class MainPageModular : Page
         RestView.ViewModel = _restViewModel;
         GraphQLView.ViewModel = _graphQLViewModel;
         RealtimeView.ViewModel = _realtimeViewModel;
+
+        // Initialize Settings ViewModel from DI if available, otherwise create manually
+        try
+        {
+            var serviceProvider = ((App)Application.Current).Host?.Services;
+            if (serviceProvider != null)
+            {
+                var localizationService = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
+                var settingsService = serviceProvider.GetService(typeof(ISettingsService)) as ISettingsService;
+
+                if (localizationService != null && settingsService != null)
+                {
+                    var languageService = new LanguageService(localizationService, settingsService);
+                    _settingsViewModel = new SettingsViewModel(languageService, settingsService);
+                    SettingsView.ViewModel = _settingsViewModel;
+                }
+            }
+        }
+        catch
+        {
+            // Settings will work without ViewModel, just won't have language switching
+        }
     }
 
     private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         if (args.SelectedItem is NavigationViewItem item)
         {
-            var content = item.Content?.ToString();
+            var tag = item.Tag?.ToString();
             
             RestView.Visibility = Visibility.Collapsed;
             GraphQLView.Visibility = Visibility.Collapsed;
             RealtimeView.Visibility = Visibility.Collapsed;
-            SettingsContent.Visibility = Visibility.Collapsed;
+            SettingsView.Visibility = Visibility.Collapsed;
 
-            switch (content)
+            switch (tag)
             {
                 case "REST":
                     RestView.Visibility = Visibility.Visible;
@@ -59,7 +84,7 @@ public sealed partial class MainPageModular : Page
                     RealtimeView.Visibility = Visibility.Visible;
                     break;
                 case "Settings":
-                    SettingsContent.Visibility = Visibility.Visible;
+                    SettingsView.Visibility = Visibility.Visible;
                     break;
             }
         }

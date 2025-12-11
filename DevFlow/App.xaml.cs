@@ -1,3 +1,5 @@
+using DevFlow.Presentation;
+using DevFlow.Services.Settings;
 using Uno.Resizetizer;
 
 namespace DevFlow;
@@ -14,7 +16,7 @@ public partial class App : Application
     }
 
     public Window? MainWindow { get; private set; }
-    protected IHost? Host { get; private set; }
+    public IHost? Host { get; private set; }
 
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
@@ -78,7 +80,9 @@ public partial class App : Application
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    // Services are registered via UseHttp above
+                    // Register Settings Services for language switching
+                    services.AddSingleton<ISettingsService, SettingsService>();
+                    services.AddSingleton<ILanguageService, LanguageService>();
                 })
                 .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
             );
@@ -96,7 +100,7 @@ public partial class App : Application
     {
         views.Register(
             new ViewMap(ViewModel: typeof(ShellModel)),
-            new ViewMap<MainPage, MainModel>(),
+            new ViewMap<MainPageModular, MainModel>(),
             new DataViewMap<SecondPage, SecondModel, Entity>()
         );
 

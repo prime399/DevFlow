@@ -24,6 +24,7 @@
             </NavigationView.MenuItemContainerStyle>
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="REST"
+                                    Tag="REST"
                                     IsSelected="True"
                                     x:Uid="MainPage.Nav.Rest">
                     <NavigationViewItem.Icon>
@@ -33,6 +34,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="GraphQL"
+                                    Tag="GraphQL"
                                     x:Uid="MainPage.Nav.GraphQL">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="{StaticResource IconGlyphGraph}" 
@@ -41,6 +43,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="Realtime"
+                                    Tag="Realtime"
                                     x:Uid="MainPage.Nav.Realtime">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="{StaticResource IconGlyphRealtime}" 
@@ -49,6 +52,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="Settings"
+                                    Tag="Settings"
                                     x:Uid="MainPage.Nav.Settings">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="{StaticResource IconGlyphSettings}" 
@@ -70,20 +74,7 @@
                     <controls:RealtimeView x:Name="RealtimeView" Visibility="Collapsed" />
                     
                     <!-- Settings Content -->
-                    <Grid x:Name="SettingsContent" Visibility="Collapsed">
-                        <Border Background="{StaticResource RequestBarBackgroundBrush}" Padding="24">
-                            <StackPanel Spacing="16">
-                                <TextBlock Text="Settings"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           FontFamily="{StaticResource AppFontFamilySemiBold}"
-                                           FontSize="24" />
-                                <TextBlock Text="Settings page coming soon..."
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           FontFamily="{StaticResource AppFontFamily}"
-                                           FontSize="14" />
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                    <controls:SettingsView x:Name="SettingsView" Visibility="Collapsed" />
                 </Grid>
             </NavigationView.Content>
         </NavigationView>
