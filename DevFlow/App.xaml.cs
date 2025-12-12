@@ -100,7 +100,7 @@ public partial class App : Application
     {
         views.Register(
             new ViewMap(ViewModel: typeof(ShellModel)),
-            new ViewMap<MainPageModular, MainModel>(),
+            new ViewMap<MainPage, MainModel>(),
             new DataViewMap<SecondPage, SecondModel, Entity>()
         );
 
