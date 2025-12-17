@@ -26,11 +26,12 @@ Download DevFlow for your platform. All builds are self-contained and don't requ
 
 | Download | Architecture | Requirements |
 |----------|-------------|--------------|
-| [DevFlow-macOS-x64.zip](https://github.com/prime399/DevFlow/releases/latest/download/DevFlow-macOS-x64.zip) | Intel x64 | macOS 10.15+ (Catalina or later) |
 | [DevFlow-macOS-ARM64.zip](https://github.com/prime399/DevFlow/releases/latest/download/DevFlow-macOS-ARM64.zip) | Apple Silicon | macOS 11+ (M1/M2/M3/M4 Macs) |
 
+> **Note**: Only Apple Silicon (M1/M2/M3/M4) Macs are supported. Intel Mac users can use the [Web Version](#-web-version-webassembly).
+
 ### Installation
-1. Download the ZIP file for your Mac
+1. Download the ZIP file
 2. Extract the `DevFlow.app` bundle
 3. Move `DevFlow.app` to your `/Applications` folder
 4. **First launch**: Right-click → Open (to bypass Gatekeeper)

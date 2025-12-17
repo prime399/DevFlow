@@ -77,8 +77,8 @@ jobs:
         path: DevFlow-Windows-ARM64.zip
 
   # ============================================
-  # macOS BUILDS
-  # ============================================  
+  # macOS BUILDS (Apple Silicon only - Intel runners retired)
+  # ============================================
   build-macos-arm64:
     runs-on: macos-latest  # Apple Silicon (M1/M2/M3)
     steps:
@@ -415,9 +415,8 @@ jobs:
           artifacts/DevFlow-Windows-ARM64/DevFlow-Windows-ARM64.zip \
           --repo ${{ github.repository }} --clobber || true
         
-        # macOS
+        # macOS (Apple Silicon only)
         gh release upload "${{ github.event.release.tag_name }}" \
-          artifacts/DevFlow-macOS-x64/DevFlow-macOS-x64.zip \
           artifacts/DevFlow-macOS-ARM64/DevFlow-macOS-ARM64.zip \
           --repo ${{ github.repository }} --clobber || true
         
@@ -469,9 +468,8 @@ jobs:
           artifacts/DevFlow-Windows-ARM64/DevFlow-Windows-ARM64.zip \
           --repo ${{ github.repository }} --clobber || true
         
-        # macOS
+        # macOS (Apple Silicon only)
         gh release upload "$TAG" \
-          artifacts/DevFlow-macOS-x64/DevFlow-macOS-x64.zip \
           artifacts/DevFlow-macOS-ARM64/DevFlow-macOS-ARM64.zip \
           --repo ${{ github.repository }} --clobber || true
         
