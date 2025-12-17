@@ -485,3 +485,7 @@ $RECYCLE.BIN/
 solution-config.props
 # Publish Profiles
 !**/Properties/PublishProfiles/*.pubxml
+
+# Articles markdown
+new article.md
+old article.md

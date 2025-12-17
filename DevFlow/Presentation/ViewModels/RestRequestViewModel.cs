@@ -108,11 +108,11 @@ public partial record RestRequestViewModel
     {
         if (await IsSending) return;
 
-        var urlInput = await RequestUrl;
-        var methodName = await SelectedMethod ?? HttpMethod.Get.Method;
+        var urlInput = TabManager.ActiveTab?.Url ?? await RequestUrl;
+        var methodName = TabManager.ActiveTab?.HttpMethod ?? await SelectedMethod ?? HttpMethod.Get.Method;
         var queryText = BuildQueryParamsFromCollection();
-        var bodyText = await BodyText ?? string.Empty;
-        var contentType = await SelectedContentType;
+        var bodyText = TabManager.ActiveTab?.BodyText ?? await BodyText ?? string.Empty;
+        var contentType = TabManager.ActiveTab?.ContentType ?? await SelectedContentType;
 
         if (string.IsNullOrWhiteSpace(urlInput))
         {

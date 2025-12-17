@@ -134,5 +134,16 @@ public sealed partial class MainPage : Page
 // Simple HttpClientFactory for the modular page
 internal class SimpleHttpClientFactory : IHttpClientFactory
 {
-    public HttpClient CreateClient(string name) => new HttpClient();
+    public HttpClient CreateClient(string name)
+    {
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+        };
+        
+        return new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+    }
 }
