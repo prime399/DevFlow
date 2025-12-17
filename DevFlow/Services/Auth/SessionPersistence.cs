@@ -1,3 +1,5 @@
+using System.Text.Json;
+using DevFlow.Serialization;
 using Supabase.Gotrue;
 using Supabase.Gotrue.Interfaces;
 
@@ -18,7 +20,7 @@ public class SessionPersistence : IGotrueSessionPersistence<Session>
     {
         try
         {
-            var json = System.Text.Json.JsonSerializer.Serialize(session);
+            var json = JsonSerializer.Serialize(session, DevFlowJsonContext.Default.Session);
 #if HAS_UNO_WINUI || WINDOWS
             Windows.Storage.ApplicationData.Current.LocalSettings.Values[SessionKey] = json;
 #else
@@ -40,7 +42,7 @@ public class SessionPersistence : IGotrueSessionPersistence<Session>
             if (Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue(SessionKey, out var value) 
                 && value is string json)
             {
-                return System.Text.Json.JsonSerializer.Deserialize<Session>(json);
+                return JsonSerializer.Deserialize(json, DevFlowJsonContext.Default.Session);
             }
 #else
             return _cachedSession;

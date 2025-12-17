@@ -278,23 +278,6 @@ public partial record RestRequestViewModel
 
     private static string FormatJsonResponse(string responseText)
     {
-        if (string.IsNullOrWhiteSpace(responseText)) return responseText;
-
-        var trimmed = responseText.TrimStart();
-        if (!trimmed.StartsWith('{') && !trimmed.StartsWith('[')) return responseText;
-
-        try
-        {
-            using var doc = JsonDocument.Parse(responseText);
-            return JsonSerializer.Serialize(doc, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            });
-        }
-        catch (JsonException)
-        {
-            return responseText;
-        }
+        return DevFlow.Serialization.JsonHelper.FormatJson(responseText);
     }
 }

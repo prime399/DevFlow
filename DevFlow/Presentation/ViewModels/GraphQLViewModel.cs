@@ -76,13 +76,16 @@ public partial record GraphQLViewModel
             {
                 try
                 {
-                    using var varDoc = JsonDocument.Parse(variables);
-                    gqlBody["variables"] = JsonSerializer.Deserialize<Dictionary<string, object?>>(variables);
+                    var parsedVars = DevFlow.Serialization.JsonHelper.ParseVariables(variables);
+                    if (parsedVars.HasValue)
+                    {
+                        gqlBody["variables"] = parsedVars.Value;
+                    }
                 }
                 catch (JsonException) { }
             }
 
-            var jsonBody = JsonSerializer.Serialize(gqlBody);
+            var jsonBody = DevFlow.Serialization.JsonHelper.SerializeDictionary(gqlBody);
             request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
             var httpClient = _httpClientFactory.CreateClient("ApiTester");
@@ -173,23 +176,6 @@ public partial record GraphQLViewModel
 
     private static string FormatJsonResponse(string responseText)
     {
-        if (string.IsNullOrWhiteSpace(responseText)) return responseText;
-
-        var trimmed = responseText.TrimStart();
-        if (!trimmed.StartsWith('{') && !trimmed.StartsWith('[')) return responseText;
-
-        try
-        {
-            using var doc = JsonDocument.Parse(responseText);
-            return JsonSerializer.Serialize(doc, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            });
-        }
-        catch (JsonException)
-        {
-            return responseText;
-        }
+        return DevFlow.Serialization.JsonHelper.FormatJson(responseText);
     }
 }

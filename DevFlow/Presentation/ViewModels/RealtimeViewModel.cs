@@ -144,20 +144,7 @@ public partial record RealtimeViewModel
 
     private static string FormatJsonIfPossible(string text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return text;
-
-        var trimmed = text.TrimStart();
-        if (!trimmed.StartsWith('{') && !trimmed.StartsWith('[')) return text;
-
-        try
-        {
-            using var doc = JsonDocument.Parse(text);
-            return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
-        }
-        catch (JsonException)
-        {
-            return text;
-        }
+        return DevFlow.Serialization.JsonHelper.FormatJson(text, relaxedEscaping: false);
     }
 
     private static string TruncateMessage(string message, int maxLength = 80)

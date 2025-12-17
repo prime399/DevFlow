@@ -130,14 +130,10 @@ public sealed partial class CodeEditorControl : UserControl
             var text = EditorTextBox.Text;
             if (string.IsNullOrWhiteSpace(text)) return;
 
-            using var doc = JsonDocument.Parse(text);
-            var formatted = JsonSerializer.Serialize(doc, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
+            var formatted = DevFlow.Serialization.JsonHelper.FormatJson(text, relaxedEscaping: false);
             EditorTextBox.Text = formatted;
         }
-        catch (JsonException)
+        catch
         {
             // Invalid JSON, don't format
         }

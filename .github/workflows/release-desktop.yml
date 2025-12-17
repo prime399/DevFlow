@@ -11,7 +11,7 @@ on:
         default: 'v1.0.0'
 
 jobs:
-  build-windows:
+  build-windows-x64:
     runs-on: windows-latest
     
     steps:
@@ -29,15 +29,8 @@ jobs:
     - name: Publish Windows x64
       run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/windows-x64
       
-    - name: Publish Windows ARM64
-      run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r win-arm64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/windows-arm64
-      
     - name: Create Windows x64 ZIP
       run: Compress-Archive -Path publish/windows-x64/* -DestinationPath DevFlow-Windows-x64.zip
-      shell: pwsh
-      
-    - name: Create Windows ARM64 ZIP
-      run: Compress-Archive -Path publish/windows-arm64/* -DestinationPath DevFlow-Windows-ARM64.zip
       shell: pwsh
       
     - name: Upload Windows x64 artifact
@@ -45,7 +38,29 @@ jobs:
       with:
         name: DevFlow-Windows-x64
         path: DevFlow-Windows-x64.zip
+
+  build-windows-arm64:
+    runs-on: windows-11-arm
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
         
+    - name: Install dependencies
+      run: dotnet restore
+      
+    - name: Publish Windows ARM64
+      run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r win-arm64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/windows-arm64
+      
+    - name: Create Windows ARM64 ZIP
+      run: Compress-Archive -Path publish/windows-arm64/* -DestinationPath DevFlow-Windows-ARM64.zip
+      shell: pwsh
+      
     - name: Upload Windows ARM64 artifact
       uses: actions/upload-artifact@v4
       with:
@@ -97,7 +112,7 @@ jobs:
         path: DevFlow-Linux-ARM64.tar.gz
 
   upload-release:
-    needs: [build-windows, build-linux]
+    needs: [build-windows-x64, build-windows-arm64, build-linux]
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     
