@@ -120,7 +120,7 @@ jobs:
   upload-release:
     needs: [build-windows-x64, build-windows-arm64, build-linux]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    # Always run - for releases, upload to release; for manual triggers, just upload artifacts
     
     steps:
     - name: Download all artifacts
@@ -129,9 +129,11 @@ jobs:
         path: artifacts
         
     - name: Display structure of downloaded files
-      run: ls -la artifacts/
+      run: ls -laR artifacts/
       
+    # For release events - upload directly to the release
     - name: Upload Windows x64 to Release
+      if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -142,6 +144,7 @@ jobs:
         asset_content_type: application/zip
         
     - name: Upload Windows ARM64 to Release
+      if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,6 +155,7 @@ jobs:
         asset_content_type: application/zip
         
     - name: Upload Linux x64 to Release
+      if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -162,6 +166,7 @@ jobs:
         asset_content_type: application/gzip
         
     - name: Upload Linux ARM64 to Release
+      if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -170,3 +175,28 @@ jobs:
         asset_path: artifacts/DevFlow-Linux-ARM64/DevFlow-Linux-ARM64.tar.gz
         asset_name: DevFlow-Linux-ARM64.tar.gz
         asset_content_type: application/gzip
+
+    # For manual workflow_dispatch - upload to latest release using gh CLI
+    - name: Upload to Latest Release (Manual Trigger)
+      if: github.event_name == 'workflow_dispatch'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Get the tag from input or use latest release
+        TAG="${{ github.event.inputs.version }}"
+        
+        # Check if release exists, if not create it
+        if ! gh release view "$TAG" --repo ${{ github.repository }} > /dev/null 2>&1; then
+          echo "Creating release $TAG..."
+          gh release create "$TAG" --repo ${{ github.repository }} --title "Release $TAG" --notes "Desktop builds for $TAG"
+        fi
+        
+        # Upload all artifacts to the release
+        echo "Uploading artifacts to release $TAG..."
+        gh release upload "$TAG" \
+          artifacts/DevFlow-Windows-x64/DevFlow-Windows-x64.zip \
+          artifacts/DevFlow-Windows-ARM64/DevFlow-Windows-ARM64.zip \
+          artifacts/DevFlow-Linux-x64/DevFlow-Linux-x64.tar.gz \
+          artifacts/DevFlow-Linux-ARM64/DevFlow-Linux-ARM64.tar.gz \
+          --repo ${{ github.repository }} \
+          --clobber
