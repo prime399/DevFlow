@@ -97,6 +97,7 @@ public sealed partial class MainPage : Page
             GraphQLView.Visibility = Visibility.Collapsed;
             RealtimeView.Visibility = Visibility.Collapsed;
             SettingsView.Visibility = Visibility.Collapsed;
+            ProfileView.Visibility = Visibility.Collapsed;
 
             switch (tag)
             {
@@ -112,8 +113,21 @@ public sealed partial class MainPage : Page
                 case "Settings":
                     SettingsView.Visibility = Visibility.Visible;
                     break;
+                case "Profile":
+                    ProfileView.Visibility = Visibility.Visible;
+                    break;
             }
         }
+    }
+
+    private void TopBar_ProfileRequested(object? sender, EventArgs e)
+    {
+        // Navigate to Profile section
+        RestView.Visibility = Visibility.Collapsed;
+        GraphQLView.Visibility = Visibility.Collapsed;
+        RealtimeView.Visibility = Visibility.Collapsed;
+        SettingsView.Visibility = Visibility.Collapsed;
+        ProfileView.Visibility = Visibility.Visible;
     }
 }
 

@@ -8,7 +8,21 @@
 
     <Grid utu:SafeArea.Insets="VisibleBounds"
           Background="{StaticResource AppBackgroundBrush}">
-        <NavigationView PaneDisplayMode="Left"
+        <Grid.RowDefinitions>
+            <!-- Top App Bar with Search and Profile -->
+            <RowDefinition Height="Auto" />
+            <!-- Main Content -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Top App Bar -->
+        <controls:TopAppBar x:Name="TopBar" 
+                            Grid.Row="0"
+                            ProfileRequested="TopBar_ProfileRequested" />
+
+        <!-- Main Navigation and Content -->
+        <NavigationView Grid.Row="1"
+                        PaneDisplayMode="Left"
                         IsBackButtonVisible="Collapsed"
                         IsPaneOpen="True"
                         OpenPaneLength="240"
@@ -60,6 +74,15 @@
                                   VerticalAlignment="Center" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="Profile"
+                                    Tag="Profile"
+                                    x:Uid="MainPage.Nav.Profile">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="{StaticResource IconGlyphAuth}" 
+                                  Foreground="{StaticResource SuccessBrush}"
+                                  VerticalAlignment="Center" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.Content>
@@ -75,6 +98,9 @@
                     
                     <!-- Settings Content -->
                     <controls:SettingsView x:Name="SettingsView" Visibility="Collapsed" />
+                    
+                    <!-- Profile Content -->
+                    <controls:ProfileView x:Name="ProfileView" Visibility="Collapsed" />
                 </Grid>
             </NavigationView.Content>
         </NavigationView>

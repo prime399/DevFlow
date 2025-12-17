@@ -1,6 +1,8 @@
 using DevFlow.Presentation;
+using DevFlow.Services.Auth;
 using DevFlow.Services.Settings;
 using Uno.Resizetizer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DevFlow;
 
@@ -18,8 +20,24 @@ public partial class App : Application
     public Window? MainWindow { get; private set; }
     public IHost? Host { get; private set; }
 
+    /// <summary>
+    /// Pending OAuth callback URL to be processed after the app is fully initialized.
+    /// </summary>
+    private static string? _pendingAuthCallback;
+
+    /// <summary>
+    /// Set the pending auth callback from external activation.
+    /// </summary>
+    public static void SetPendingAuthCallback(string callbackUrl)
+    {
+        Console.WriteLine($"[App] Setting pending auth callback: {callbackUrl}");
+        _pendingAuthCallback = callbackUrl;
+    }
+
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        Console.WriteLine("[App] OnLaunched called");
+        
         var builder = this.CreateBuilder(args)
             // Add navigation support for toolkit controls such as TabBar and NavigationView
             .UseToolkitNavigation()
@@ -83,6 +101,9 @@ public partial class App : Application
                     // Register Settings Services for language switching
                     services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<ILanguageService, LanguageService>();
+                    
+                    // Register Supabase Auth Service
+                    services.AddSingleton<ISupabaseAuthService, SupabaseAuthService>();
                 })
                 .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
             );
@@ -94,6 +115,72 @@ public partial class App : Application
                 MainWindow.SetWindowIcon();
 
         Host = await builder.NavigateAsync<Shell>();
+        
+        // Process pending OAuth callback if any
+        await ProcessPendingAuthCallbackAsync();
+    }
+
+    /// <summary>
+    /// Process any pending OAuth callback that was received during app launch or from external activation.
+    /// </summary>
+    private async Task ProcessPendingAuthCallbackAsync()
+    {
+        if (!string.IsNullOrEmpty(_pendingAuthCallback))
+        {
+            Console.WriteLine($"[App] Processing pending auth callback");
+            await HandleAuthCallbackAsync(_pendingAuthCallback);
+            _pendingAuthCallback = null;
+        }
+    }
+
+    /// <summary>
+    /// Handle the OAuth callback by extracting the authorization code and exchanging it for a session.
+    /// </summary>
+    public async Task HandleAuthCallbackAsync(string callbackUri)
+    {
+        Console.WriteLine($"[App] HandleAuthCallbackAsync called with: {callbackUri.Substring(0, Math.Min(50, callbackUri.Length))}...");
+        
+        try
+        {
+            if (Host?.Services == null)
+            {
+                Console.WriteLine("[App] ERROR: Host services not available");
+                return;
+            }
+
+            var authService = Host.Services.GetService<ISupabaseAuthService>();
+            if (authService == null)
+            {
+                Console.WriteLine("[App] ERROR: Auth service not found");
+                return;
+            }
+
+            // Ensure auth service is initialized
+            await authService.InitializeAsync();
+
+            // Parse the callback URI to extract the authorization code
+            var uri = new Uri(callbackUri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var code = query["code"];
+
+            if (!string.IsNullOrEmpty(code))
+            {
+                Console.WriteLine($"[App] Authorization code found, exchanging for session...");
+                var success = await authService.HandleOAuthCallbackAsync(code);
+                Console.WriteLine($"[App] OAuth callback result: {success}");
+            }
+            else
+            {
+                // Try fragment-based tokens (implicit flow fallback)
+                Console.WriteLine("[App] No code found, trying SetSessionFromUrl...");
+                var success = await authService.SetSessionFromUrlAsync(callbackUri);
+                Console.WriteLine($"[App] SetSessionFromUrl result: {success}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[App] ERROR handling auth callback: {ex.Message}");
+        }
     }
 
     private static void RegisterRoutes(IViewRegistry views, IRouteRegistry routes)

@@ -6,6 +6,8 @@
   <ItemGroup>
     <!-- Fluent Icons Font -->
     <PackageReference Include="Uno.Fonts.Fluent" />
+    <!-- Supabase for authentication and backend -->
+    <PackageReference Include="Supabase" />
   </ItemGroup>
   
   <PropertyGroup>
