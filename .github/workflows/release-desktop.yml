@@ -78,72 +78,7 @@ jobs:
 
   # ============================================
   # macOS BUILDS
-  # ============================================
-  build-macos-x64:
-    runs-on: macos-13  # Intel-based macOS
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '10.0.x'
-        
-    - name: Install dependencies
-      run: dotnet restore
-      
-    - name: Publish macOS x64
-      run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r osx-x64 --self-contained true -p:PublishSingleFile=true -o publish/macos-x64
-      
-    - name: Make binary executable
-      run: chmod +x publish/macos-x64/DevFlow
-      
-    - name: Create macOS x64 app bundle
-      run: |
-        mkdir -p DevFlow.app/Contents/MacOS
-        mkdir -p DevFlow.app/Contents/Resources
-        cp -R publish/macos-x64/* DevFlow.app/Contents/MacOS/
-        
-        # Create Info.plist
-        cat > DevFlow.app/Contents/Info.plist << 'EOF'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>CFBundleExecutable</key>
-            <string>DevFlow</string>
-            <key>CFBundleIdentifier</key>
-            <string>com.companyname.devflow</string>
-            <key>CFBundleName</key>
-            <string>DevFlow</string>
-            <key>CFBundleDisplayName</key>
-            <string>DevFlow</string>
-            <key>CFBundleVersion</key>
-            <string>1.0.0</string>
-            <key>CFBundleShortVersionString</key>
-            <string>1.0.0</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>LSMinimumSystemVersion</key>
-            <string>10.15</string>
-            <key>NSHighResolutionCapable</key>
-            <true/>
-            <key>NSSupportsAutomaticGraphicsSwitching</key>
-            <true/>
-        </dict>
-        </plist>
-        EOF
-        
-    - name: Create macOS x64 ZIP
-      run: zip -r DevFlow-macOS-x64.zip DevFlow.app
-      
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: DevFlow-macOS-x64
-        path: DevFlow-macOS-x64.zip
-
+  # ============================================  
   build-macos-arm64:
     runs-on: macos-latest  # Apple Silicon (M1/M2/M3)
     steps:
@@ -456,7 +391,7 @@ jobs:
   # UPLOAD TO RELEASE
   # ============================================
   upload-release:
-    needs: [build-windows-x64, build-windows-arm64, build-macos-x64, build-macos-arm64, build-linux]
+    needs: [build-windows-x64, build-windows-arm64, build-macos-arm64, build-linux]
     runs-on: ubuntu-latest
     
     steps:
