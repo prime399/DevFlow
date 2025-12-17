@@ -136,6 +136,13 @@ internal class SimpleHttpClientFactory : IHttpClientFactory
 {
     public HttpClient CreateClient(string name)
     {
+#if __WASM__
+        // WASM uses browser's fetch API, no custom handler needed
+        return new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+#else
         var handler = new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
@@ -145,5 +152,6 @@ internal class SimpleHttpClientFactory : IHttpClientFactory
         {
             Timeout = TimeSpan.FromSeconds(30)
         };
+#endif
     }
 }
