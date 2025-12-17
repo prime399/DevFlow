@@ -2,9 +2,12 @@ name: Build and Release Desktop Apps
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  APP_NAME: DevFlow
+  APP_VERSION: ${{ github.event.release.tag_name || github.event.inputs.version || 'v1.0.0' }}
 
 permissions:
-  contents: write  # Required to upload release assets
+  contents: write
+
 on:
   release:
     types: [created]
@@ -15,11 +18,12 @@ on:
         required: true
         default: 'v1.0.0'
 
-
 jobs:
+  # ============================================
+  # WINDOWS BUILDS
+  # ============================================
   build-windows-x64:
     runs-on: windows-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -39,7 +43,7 @@ jobs:
       run: Compress-Archive -Path publish/windows-x64/* -DestinationPath DevFlow-Windows-x64.zip
       shell: pwsh
       
-    - name: Upload Windows x64 artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: DevFlow-Windows-x64
@@ -47,7 +51,6 @@ jobs:
 
   build-windows-arm64:
     runs-on: windows-11-arm
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -67,15 +70,17 @@ jobs:
       run: Compress-Archive -Path publish/windows-arm64/* -DestinationPath DevFlow-Windows-ARM64.zip
       shell: pwsh
       
-    - name: Upload Windows ARM64 artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: DevFlow-Windows-ARM64
         path: DevFlow-Windows-ARM64.zip
 
-  build-linux:
-    runs-on: ubuntu-latest
-    
+  # ============================================
+  # macOS BUILDS
+  # ============================================
+  build-macos-x64:
+    runs-on: macos-13  # Intel-based macOS
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -88,39 +93,371 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
       
+    - name: Publish macOS x64
+      run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r osx-x64 --self-contained true -p:PublishSingleFile=true -o publish/macos-x64
+      
+    - name: Make binary executable
+      run: chmod +x publish/macos-x64/DevFlow
+      
+    - name: Create macOS x64 app bundle
+      run: |
+        mkdir -p DevFlow.app/Contents/MacOS
+        mkdir -p DevFlow.app/Contents/Resources
+        cp -R publish/macos-x64/* DevFlow.app/Contents/MacOS/
+        
+        # Create Info.plist
+        cat > DevFlow.app/Contents/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>DevFlow</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.companyname.devflow</string>
+            <key>CFBundleName</key>
+            <string>DevFlow</string>
+            <key>CFBundleDisplayName</key>
+            <string>DevFlow</string>
+            <key>CFBundleVersion</key>
+            <string>1.0.0</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0.0</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.15</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+            <key>NSSupportsAutomaticGraphicsSwitching</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        
+    - name: Create macOS x64 ZIP
+      run: zip -r DevFlow-macOS-x64.zip DevFlow.app
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DevFlow-macOS-x64
+        path: DevFlow-macOS-x64.zip
+
+  build-macos-arm64:
+    runs-on: macos-latest  # Apple Silicon (M1/M2/M3)
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        
+    - name: Install dependencies
+      run: dotnet restore
+      
+    - name: Publish macOS ARM64
+      run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r osx-arm64 --self-contained true -p:PublishSingleFile=true -o publish/macos-arm64
+      
+    - name: Make binary executable
+      run: chmod +x publish/macos-arm64/DevFlow
+      
+    - name: Create macOS ARM64 app bundle
+      run: |
+        mkdir -p DevFlow.app/Contents/MacOS
+        mkdir -p DevFlow.app/Contents/Resources
+        cp -R publish/macos-arm64/* DevFlow.app/Contents/MacOS/
+        
+        # Create Info.plist
+        cat > DevFlow.app/Contents/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>DevFlow</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.companyname.devflow</string>
+            <key>CFBundleName</key>
+            <string>DevFlow</string>
+            <key>CFBundleDisplayName</key>
+            <string>DevFlow</string>
+            <key>CFBundleVersion</key>
+            <string>1.0.0</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0.0</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>11.0</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+            <key>NSSupportsAutomaticGraphicsSwitching</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        
+    - name: Create macOS ARM64 ZIP
+      run: zip -r DevFlow-macOS-ARM64.zip DevFlow.app
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DevFlow-macOS-ARM64
+        path: DevFlow-macOS-ARM64.zip
+
+  # ============================================
+  # LINUX BUILDS
+  # ============================================
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        
+    - name: Install dependencies
+      run: dotnet restore
+      
+    # Build for x64
     - name: Publish Linux x64
       run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/linux-x64
       
+    # Build for ARM64
     - name: Publish Linux ARM64
       run: dotnet publish DevFlow/DevFlow.csproj -c Release -f net10.0-desktop -r linux-arm64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/linux-arm64
       
-    - name: Make Linux binaries executable
+    - name: Make binaries executable
       run: |
         chmod +x publish/linux-x64/DevFlow
         chmod +x publish/linux-arm64/DevFlow
       
-    - name: Create Linux x64 tarball
-      run: tar -czvf DevFlow-Linux-x64.tar.gz -C publish/linux-x64 .
+    # Create tarballs (universal)
+    - name: Create Linux tarballs
+      run: |
+        tar -czvf DevFlow-Linux-x64.tar.gz -C publish/linux-x64 .
+        tar -czvf DevFlow-Linux-ARM64.tar.gz -C publish/linux-arm64 .
       
-    - name: Create Linux ARM64 tarball
-      run: tar -czvf DevFlow-Linux-ARM64.tar.gz -C publish/linux-arm64 .
+    # Create .deb package for Debian/Ubuntu (x64)
+    - name: Create Debian package (x64)
+      run: |
+        mkdir -p deb-package/DEBIAN
+        mkdir -p deb-package/usr/bin
+        mkdir -p deb-package/usr/share/applications
+        mkdir -p deb-package/usr/share/icons/hicolor/256x256/apps
+        
+        cp publish/linux-x64/DevFlow deb-package/usr/bin/devflow
+        chmod +x deb-package/usr/bin/devflow
+        
+        # Create control file
+        cat > deb-package/DEBIAN/control << EOF
+        Package: devflow
+        Version: 1.0.0
+        Section: devel
+        Priority: optional
+        Architecture: amd64
+        Maintainer: DevFlow Team <support@devflow.app>
+        Description: DevFlow - API Development Tool
+         A modern API development and testing tool built with Uno Platform.
+         Supports REST, GraphQL, WebSocket, and more.
+        EOF
+        
+        # Create desktop entry
+        cat > deb-package/usr/share/applications/devflow.desktop << EOF
+        [Desktop Entry]
+        Name=DevFlow
+        Comment=API Development Tool
+        Exec=/usr/bin/devflow
+        Terminal=false
+        Type=Application
+        Categories=Development;IDE;
+        StartupWMClass=DevFlow
+        EOF
+        
+        dpkg-deb --build deb-package DevFlow-Linux-x64.deb
       
-    - name: Upload Linux x64 artifact
+    # Create .deb package for Debian/Ubuntu (ARM64)
+    - name: Create Debian package (ARM64)
+      run: |
+        rm -rf deb-package
+        mkdir -p deb-package/DEBIAN
+        mkdir -p deb-package/usr/bin
+        mkdir -p deb-package/usr/share/applications
+        
+        cp publish/linux-arm64/DevFlow deb-package/usr/bin/devflow
+        chmod +x deb-package/usr/bin/devflow
+        
+        cat > deb-package/DEBIAN/control << EOF
+        Package: devflow
+        Version: 1.0.0
+        Section: devel
+        Priority: optional
+        Architecture: arm64
+        Maintainer: DevFlow Team <support@devflow.app>
+        Description: DevFlow - API Development Tool
+         A modern API development and testing tool built with Uno Platform.
+         Supports REST, GraphQL, WebSocket, and more.
+        EOF
+        
+        cat > deb-package/usr/share/applications/devflow.desktop << EOF
+        [Desktop Entry]
+        Name=DevFlow
+        Comment=API Development Tool
+        Exec=/usr/bin/devflow
+        Terminal=false
+        Type=Application
+        Categories=Development;IDE;
+        StartupWMClass=DevFlow
+        EOF
+        
+        dpkg-deb --build deb-package DevFlow-Linux-ARM64.deb
+      
+    # Create RPM package for Fedora/RHEL (x64)
+    - name: Install RPM tools
+      run: sudo apt-get update && sudo apt-get install -y rpm
+      
+    - name: Create RPM package (x64)
+      run: |
+        mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+        mkdir -p rpmbuild/BUILDROOT/devflow-1.0.0-1.x86_64/usr/bin
+        mkdir -p rpmbuild/BUILDROOT/devflow-1.0.0-1.x86_64/usr/share/applications
+        
+        cp publish/linux-x64/DevFlow rpmbuild/BUILDROOT/devflow-1.0.0-1.x86_64/usr/bin/devflow
+        chmod +x rpmbuild/BUILDROOT/devflow-1.0.0-1.x86_64/usr/bin/devflow
+        
+        cat > rpmbuild/BUILDROOT/devflow-1.0.0-1.x86_64/usr/share/applications/devflow.desktop << EOF
+        [Desktop Entry]
+        Name=DevFlow
+        Comment=API Development Tool
+        Exec=/usr/bin/devflow
+        Terminal=false
+        Type=Application
+        Categories=Development;IDE;
+        StartupWMClass=DevFlow
+        EOF
+        
+        cat > rpmbuild/SPECS/devflow.spec << EOF
+        Name: devflow
+        Version: 1.0.0
+        Release: 1
+        Summary: API Development Tool
+        License: MIT
+        
+        %description
+        A modern API development and testing tool built with Uno Platform.
+        
+        %files
+        /usr/bin/devflow
+        /usr/share/applications/devflow.desktop
+        EOF
+        
+        rpmbuild --define "_topdir $(pwd)/rpmbuild" -bb rpmbuild/SPECS/devflow.spec
+        cp rpmbuild/RPMS/x86_64/*.rpm DevFlow-Linux-x64.rpm || echo "RPM build skipped"
+      continue-on-error: true
+      
+    # Create AppImage for universal Linux (x64)
+    - name: Create AppImage (x64)
+      run: |
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        
+        cp publish/linux-x64/DevFlow AppDir/usr/bin/devflow
+        chmod +x AppDir/usr/bin/devflow
+        
+        cat > AppDir/devflow.desktop << EOF
+        [Desktop Entry]
+        Name=DevFlow
+        Comment=API Development Tool
+        Exec=devflow
+        Icon=devflow
+        Terminal=false
+        Type=Application
+        Categories=Development;IDE;
+        StartupWMClass=DevFlow
+        EOF
+        
+        cp AppDir/devflow.desktop AppDir/usr/share/applications/
+        
+        # Create a simple icon placeholder
+        cat > AppDir/devflow.svg << 'EOF'
+        <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+          <rect width="256" height="256" fill="#6366f1" rx="32"/>
+          <text x="128" y="160" font-family="Arial" font-size="120" font-weight="bold" fill="white" text-anchor="middle">D</text>
+        </svg>
+        EOF
+        
+        # Create AppRun
+        cat > AppDir/AppRun << 'EOF'
+        #!/bin/bash
+        SELF=$(readlink -f "$0")
+        HERE=${SELF%/*}
+        export PATH="${HERE}/usr/bin:${PATH}"
+        exec "${HERE}/usr/bin/devflow" "$@"
+        EOF
+        chmod +x AppDir/AppRun
+        
+        # Download appimagetool
+        wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+        chmod +x appimagetool
+        
+        # Create AppImage
+        ARCH=x86_64 ./appimagetool AppDir DevFlow-Linux-x64.AppImage || echo "AppImage creation skipped"
+      continue-on-error: true
+      
+    - name: Upload Linux x64 tarball
       uses: actions/upload-artifact@v4
       with:
         name: DevFlow-Linux-x64
         path: DevFlow-Linux-x64.tar.gz
         
-    - name: Upload Linux ARM64 artifact
+    - name: Upload Linux ARM64 tarball
       uses: actions/upload-artifact@v4
       with:
         name: DevFlow-Linux-ARM64
         path: DevFlow-Linux-ARM64.tar.gz
+        
+    - name: Upload Debian x64 package
+      uses: actions/upload-artifact@v4
+      with:
+        name: DevFlow-Linux-x64-deb
+        path: DevFlow-Linux-x64.deb
+        
+    - name: Upload Debian ARM64 package
+      uses: actions/upload-artifact@v4
+      with:
+        name: DevFlow-Linux-ARM64-deb
+        path: DevFlow-Linux-ARM64.deb
+        
+    - name: Upload RPM package
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: DevFlow-Linux-x64-rpm
+        path: DevFlow-Linux-x64.rpm
+        if-no-files-found: ignore
+        
+    - name: Upload AppImage
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: DevFlow-Linux-x64-AppImage
+        path: DevFlow-Linux-x64.AppImage
+        if-no-files-found: ignore
 
+  # ============================================
+  # UPLOAD TO RELEASE
+  # ============================================
   upload-release:
-    needs: [build-windows-x64, build-windows-arm64, build-linux]
+    needs: [build-windows-x64, build-windows-arm64, build-macos-x64, build-macos-arm64, build-linux]
     runs-on: ubuntu-latest
-    # Always run - for releases, upload to release; for manual triggers, just upload artifacts
     
     steps:
     - name: Download all artifacts
@@ -132,71 +469,88 @@ jobs:
       run: ls -laR artifacts/
       
     # For release events - upload directly to the release
-    - name: Upload Windows x64 to Release
+    - name: Upload assets to Release
       if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: artifacts/DevFlow-Windows-x64/DevFlow-Windows-x64.zip
-        asset_name: DevFlow-Windows-x64.zip
-        asset_content_type: application/zip
+      run: |
+        # Windows
+        gh release upload "${{ github.event.release.tag_name }}" \
+          artifacts/DevFlow-Windows-x64/DevFlow-Windows-x64.zip \
+          artifacts/DevFlow-Windows-ARM64/DevFlow-Windows-ARM64.zip \
+          --repo ${{ github.repository }} --clobber || true
         
-    - name: Upload Windows ARM64 to Release
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: artifacts/DevFlow-Windows-ARM64/DevFlow-Windows-ARM64.zip
-        asset_name: DevFlow-Windows-ARM64.zip
-        asset_content_type: application/zip
+        # macOS
+        gh release upload "${{ github.event.release.tag_name }}" \
+          artifacts/DevFlow-macOS-x64/DevFlow-macOS-x64.zip \
+          artifacts/DevFlow-macOS-ARM64/DevFlow-macOS-ARM64.zip \
+          --repo ${{ github.repository }} --clobber || true
         
-    - name: Upload Linux x64 to Release
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: artifacts/DevFlow-Linux-x64/DevFlow-Linux-x64.tar.gz
-        asset_name: DevFlow-Linux-x64.tar.gz
-        asset_content_type: application/gzip
+        # Linux tarballs
+        gh release upload "${{ github.event.release.tag_name }}" \
+          artifacts/DevFlow-Linux-x64/DevFlow-Linux-x64.tar.gz \
+          artifacts/DevFlow-Linux-ARM64/DevFlow-Linux-ARM64.tar.gz \
+          --repo ${{ github.repository }} --clobber || true
         
-    - name: Upload Linux ARM64 to Release
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: artifacts/DevFlow-Linux-ARM64/DevFlow-Linux-ARM64.tar.gz
-        asset_name: DevFlow-Linux-ARM64.tar.gz
-        asset_content_type: application/gzip
+        # Linux .deb packages
+        gh release upload "${{ github.event.release.tag_name }}" \
+          artifacts/DevFlow-Linux-x64-deb/DevFlow-Linux-x64.deb \
+          artifacts/DevFlow-Linux-ARM64-deb/DevFlow-Linux-ARM64.deb \
+          --repo ${{ github.repository }} --clobber || true
+        
+        # Linux RPM (if exists)
+        if [ -f "artifacts/DevFlow-Linux-x64-rpm/DevFlow-Linux-x64.rpm" ]; then
+          gh release upload "${{ github.event.release.tag_name }}" \
+            artifacts/DevFlow-Linux-x64-rpm/DevFlow-Linux-x64.rpm \
+            --repo ${{ github.repository }} --clobber || true
+        fi
+        
+        # Linux AppImage (if exists)
+        if [ -f "artifacts/DevFlow-Linux-x64-AppImage/DevFlow-Linux-x64.AppImage" ]; then
+          gh release upload "${{ github.event.release.tag_name }}" \
+            artifacts/DevFlow-Linux-x64-AppImage/DevFlow-Linux-x64.AppImage \
+            --repo ${{ github.repository }} --clobber || true
+        fi
 
-    # For manual workflow_dispatch - upload to latest release using gh CLI
-    - name: Upload to Latest Release (Manual Trigger)
+    # For manual workflow_dispatch
+    - name: Upload to Release (Manual Trigger)
       if: github.event_name == 'workflow_dispatch'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Get the tag from input or use latest release
         TAG="${{ github.event.inputs.version }}"
         
-        # Check if release exists, if not create it
+        # Create release if it doesn't exist
         if ! gh release view "$TAG" --repo ${{ github.repository }} > /dev/null 2>&1; then
           echo "Creating release $TAG..."
           gh release create "$TAG" --repo ${{ github.repository }} --title "Release $TAG" --notes "Desktop builds for $TAG"
         fi
         
-        # Upload all artifacts to the release
         echo "Uploading artifacts to release $TAG..."
+        
+        # Windows
         gh release upload "$TAG" \
           artifacts/DevFlow-Windows-x64/DevFlow-Windows-x64.zip \
           artifacts/DevFlow-Windows-ARM64/DevFlow-Windows-ARM64.zip \
+          --repo ${{ github.repository }} --clobber || true
+        
+        # macOS
+        gh release upload "$TAG" \
+          artifacts/DevFlow-macOS-x64/DevFlow-macOS-x64.zip \
+          artifacts/DevFlow-macOS-ARM64/DevFlow-macOS-ARM64.zip \
+          --repo ${{ github.repository }} --clobber || true
+        
+        # Linux
+        gh release upload "$TAG" \
           artifacts/DevFlow-Linux-x64/DevFlow-Linux-x64.tar.gz \
           artifacts/DevFlow-Linux-ARM64/DevFlow-Linux-ARM64.tar.gz \
-          --repo ${{ github.repository }} \
-          --clobber
+          artifacts/DevFlow-Linux-x64-deb/DevFlow-Linux-x64.deb \
+          artifacts/DevFlow-Linux-ARM64-deb/DevFlow-Linux-ARM64.deb \
+          --repo ${{ github.repository }} --clobber || true
+        
+        # Optional packages
+        [ -f "artifacts/DevFlow-Linux-x64-rpm/DevFlow-Linux-x64.rpm" ] && \
+          gh release upload "$TAG" artifacts/DevFlow-Linux-x64-rpm/DevFlow-Linux-x64.rpm --repo ${{ github.repository }} --clobber || true
+        
+        [ -f "artifacts/DevFlow-Linux-x64-AppImage/DevFlow-Linux-x64.AppImage" ] && \
+          gh release upload "$TAG" artifacts/DevFlow-Linux-x64-AppImage/DevFlow-Linux-x64.AppImage --repo ${{ github.repository }} --clobber || true
